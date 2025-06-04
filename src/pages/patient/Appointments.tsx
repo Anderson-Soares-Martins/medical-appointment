@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { ArrowLeft, Search, Calendar, Clock } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '@/lib/store/useStore'

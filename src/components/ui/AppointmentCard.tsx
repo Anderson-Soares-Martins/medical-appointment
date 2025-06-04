@@ -1,4 +1,3 @@
-import React from 'react'
 import { Calendar, Clock } from 'lucide-react'
 import type { Appointment, Doctor, Patient } from '@/lib/types'
 import { Card, CardContent } from '@/components/ui/card'

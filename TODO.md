@@ -93,7 +93,7 @@ Eficiência: Minimização de cliques para concluir tarefas comuns
 quero que implemente as seguintes telas e faça com que tenha um fluxo consiso
 
 ```
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Bell, Calendar, ClipboardList, User } from 'lucide-react';
 
 export default function PatientDashboard() {
@@ -230,7 +230,7 @@ export default function PatientDashboard() {
 ```
 
 ```
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ArrowLeft, Search, Calendar, Clock, Check } from 'lucide-react';
 
 export default function ScheduleAppointment() {
@@ -553,7 +553,7 @@ export default function ScheduleAppointment() {
 ```
 
 ```
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Calendar, Clock, User, ClipboardList, ChevronRight, Menu } from 'lucide-react';
 
 export default function DoctorDashboard() {
@@ -750,7 +750,7 @@ export default function DoctorDashboard() {
 ```
 
 ```
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ArrowLeft, Filter, Search, Calendar, User, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function AppointmentHistory() {
