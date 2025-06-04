@@ -1,37 +1,128 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import {
+    BrowserRouter as Router,
+    Routes,
+    Route,
+    Navigate,
+} from 'react-router-dom'
+import { useStore } from './lib/store/useStore'
+import { MainLayout } from './components/layout/MainLayout'
+
+// Patient Pages
+import PatientDashboard from './pages/patient/Dashboard'
+import PatientAppointments from './pages/patient/Appointments'
+import PatientHistory from './pages/patient/History'
+import PatientProfile from './pages/patient/Profile'
+
+// Doctor Pages
+import DoctorDashboard from './pages/doctor/Dashboard'
+import DoctorSchedule from './pages/doctor/Schedule'
+import DoctorHistory from './pages/doctor/History'
+import DoctorProfile from './pages/doctor/Profile'
+
+// Auth Pages
+import Login from './pages/auth/Login'
+
+function PrivateRoute({ children }: { children: React.ReactNode }) {
+    const user = useStore((state) => state.user)
+
+    if (!user) {
+        return <Navigate to="/login" replace />
+    }
+
+    return <MainLayout>{children}</MainLayout>
+}
 
 function App() {
-    const [count, setCount] = useState(0)
+    const user = useStore((state) => state.user)
 
     return (
-        <>
-            <div>
-                <a href="https://vite.dev" target="_blank">
-                    <img src={viteLogo} className="logo" alt="Vite logo" />
-                </a>
-                <a href="https://react.dev" target="_blank">
-                    <img
-                        src={reactLogo}
-                        className="logo react"
-                        alt="React logo"
-                    />
-                </a>
-            </div>
-            <h1>Vite + React</h1>
-            <div className="card">
-                <button onClick={() => setCount((count) => count + 1)}>
-                    count is {count}
-                </button>
-                <p>
-                    Edit <code>src/App.tsx</code> and save to test HMR
-                </p>
-            </div>
-            <p className="read-the-docs">
-                Click on the Vite and React logos to learn more
-            </p>
-        </>
+        <Router>
+            <Routes>
+                {/* Public Routes */}
+                <Route path="/login" element={<Login />} />
+
+                {/* Protected Patient Routes */}
+                <Route
+                    path="/patient"
+                    element={
+                        <PrivateRoute>
+                            <PatientDashboard />
+                        </PrivateRoute>
+                    }
+                />
+                <Route
+                    path="/patient/appointments"
+                    element={
+                        <PrivateRoute>
+                            <PatientAppointments />
+                        </PrivateRoute>
+                    }
+                />
+                <Route
+                    path="/patient/history"
+                    element={
+                        <PrivateRoute>
+                            <PatientHistory />
+                        </PrivateRoute>
+                    }
+                />
+                <Route
+                    path="/patient/profile"
+                    element={
+                        <PrivateRoute>
+                            <PatientProfile />
+                        </PrivateRoute>
+                    }
+                />
+
+                {/* Protected Doctor Routes */}
+                <Route
+                    path="/doctor"
+                    element={
+                        <PrivateRoute>
+                            <DoctorDashboard />
+                        </PrivateRoute>
+                    }
+                />
+                <Route
+                    path="/doctor/schedule"
+                    element={
+                        <PrivateRoute>
+                            <DoctorSchedule />
+                        </PrivateRoute>
+                    }
+                />
+                <Route
+                    path="/doctor/history"
+                    element={
+                        <PrivateRoute>
+                            <DoctorHistory />
+                        </PrivateRoute>
+                    }
+                />
+                <Route
+                    path="/doctor/profile"
+                    element={
+                        <PrivateRoute>
+                            <DoctorProfile />
+                        </PrivateRoute>
+                    }
+                />
+
+                {/* Redirect based on user role */}
+                <Route
+                    path="/"
+                    element={
+                        <Navigate
+                            to={
+                                user?.role === 'DOCTOR' ? '/doctor' : '/patient'
+                            }
+                            replace
+                        />
+                    }
+                />
+            </Routes>
+        </Router>
     )
 }
 

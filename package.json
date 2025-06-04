@@ -51,12 +51,14 @@
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.57.0",
     "react-resizable-panels": "^3.0.2",
+    "react-router-dom": "^7.6.2",
     "recharts": "^2.15.3",
     "sonner": "^2.0.5",
     "tailwind-merge": "^3.3.0",
     "tailwindcss": "^4.1.8",
     "vaul": "^1.1.2",
-    "zod": "^3.25.50"
+    "zod": "^3.25.50",
+    "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
