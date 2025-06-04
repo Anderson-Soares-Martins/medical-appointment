@@ -213,7 +213,7 @@ export default function DoctorSchedule() {
                                 {timeSlots.map((time) => (
                                     <div
                                         key={time}
-                                        className="p-4 border-b flex items-center justify-center text-gray-600"
+                                        className="p-4 border-b flex items-center justify-center h-24 text-gray-600"
                                     >
                                         {time}
                                     </div>

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { ArrowLeft, Filter, Search, ChevronDown, ChevronUp } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { appointmentsApi } from '@/lib/services/api'
+import { useAppointmentsStore } from '@/lib/store/appointments'
 import { AppointmentCard } from '@/components/ui/AppointmentCard'
-import type { Appointment } from '@/lib/types'
+import type { Appointment } from '@/lib/types/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -15,6 +15,8 @@ import {
 
 export default function DoctorHistory() {
     const navigate = useNavigate()
+    const { appointments, fetchAppointments, isLoading } =
+        useAppointmentsStore()
     const [filterOpen, setFilterOpen] = useState(false)
     const [statusFilter, setStatusFilter] = useState<
         Appointment['status'] | 'all'
@@ -22,24 +24,10 @@ export default function DoctorHistory() {
     const [searchTerm, setSearchTerm] = useState('')
     const [startDate, setStartDate] = useState('')
     const [endDate, setEndDate] = useState('')
-    const [appointments, setAppointments] = useState<Appointment[]>([])
-    const [isLoading, setIsLoading] = useState(false)
 
     useEffect(() => {
-        const fetchAppointments = async () => {
-            setIsLoading(true)
-            try {
-                const data = await appointmentsApi.getAll()
-                setAppointments(data)
-            } catch (error) {
-                console.error('Failed to fetch appointments:', error)
-            } finally {
-                setIsLoading(false)
-            }
-        }
-
         fetchAppointments()
-    }, [])
+    }, [fetchAppointments])
 
     const filteredAppointments = appointments.filter((appointment) => {
         if (statusFilter !== 'all' && appointment.status !== statusFilter) {
@@ -48,23 +36,31 @@ export default function DoctorHistory() {
 
         if (searchTerm) {
             const searchLower = searchTerm.toLowerCase()
-            const matchesSearch =
-                appointment.type.toLowerCase().includes(searchLower) ||
-                appointment.notes?.toLowerCase().includes(searchLower) ||
-                appointment.diagnosis?.toLowerCase().includes(searchLower) ||
-                appointment.prescription?.toLowerCase().includes(searchLower)
+            const patientName = appointment.patient.name.toLowerCase()
+            const notes = appointment.notes?.toLowerCase() || ''
 
-            if (!matchesSearch) {
+            if (
+                !patientName.includes(searchLower) &&
+                !notes.includes(searchLower)
+            ) {
                 return false
             }
         }
 
-        if (startDate && appointment.date < startDate) {
-            return false
+        if (startDate) {
+            const appointmentDate = new Date(appointment.date)
+            const filterDate = new Date(startDate)
+            if (appointmentDate < filterDate) {
+                return false
+            }
         }
 
-        if (endDate && appointment.date > endDate) {
-            return false
+        if (endDate) {
+            const appointmentDate = new Date(appointment.date)
+            const filterDate = new Date(endDate)
+            if (appointmentDate > filterDate) {
+                return false
+            }
         }
 
         return true
@@ -97,7 +93,7 @@ export default function DoctorHistory() {
                         />
                         <Input
                             type="text"
-                            placeholder="Buscar por tipo de consulta, diagnóstico ou prescrição..."
+                            placeholder="Buscar por paciente ou observações..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="pl-10"
@@ -236,65 +232,28 @@ export default function DoctorHistory() {
                                 </div>
                             </CollapsibleContent>
                         </Collapsible>
-
-                        <div className="text-sm text-gray-500">
-                            {filteredAppointments.length} consultas encontradas
-                        </div>
                     </div>
                 </CardContent>
             </Card>
 
             {/* Appointments List */}
-            {isLoading ? (
-                <div className="text-center py-8">Carregando...</div>
-            ) : (
-                <div className="space-y-4 mt-6">
-                    {filteredAppointments.length > 0 ? (
-                        filteredAppointments.map((appointment) => (
-                            <Card key={appointment.id}>
-                                <CardContent className="p-4">
-                                    <AppointmentCard
-                                        appointment={appointment}
-                                        showActions={false}
-                                    />
-                                    {(appointment.diagnosis ||
-                                        appointment.prescription) && (
-                                        <div className="mt-4 pt-4 border-t">
-                                            {appointment.diagnosis && (
-                                                <div className="mb-3">
-                                                    <h4 className="text-sm font-medium text-gray-700">
-                                                        Diagnóstico
-                                                    </h4>
-                                                    <p className="text-gray-600">
-                                                        {appointment.diagnosis}
-                                                    </p>
-                                                </div>
-                                            )}
-                                            {appointment.prescription && (
-                                                <div>
-                                                    <h4 className="text-sm font-medium text-gray-700">
-                                                        Prescrição
-                                                    </h4>
-                                                    <p className="text-gray-600">
-                                                        {
-                                                            appointment.prescription
-                                                        }
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        ))
-                    ) : (
-                        <div className="text-center py-8 text-gray-500">
-                            Nenhuma consulta encontrada com os filtros
-                            selecionados.
-                        </div>
-                    )}
-                </div>
-            )}
+            <div className="mt-6 space-y-4">
+                {isLoading ? (
+                    <div className="text-center py-8">Carregando...</div>
+                ) : filteredAppointments.length > 0 ? (
+                    filteredAppointments.map((appointment) => (
+                        <AppointmentCard
+                            key={appointment.id}
+                            appointment={appointment}
+                            showActions={false}
+                        />
+                    ))
+                ) : (
+                    <p className="text-center py-8 text-gray-500">
+                        Nenhuma consulta encontrada.
+                    </p>
+                )}
+            </div>
         </div>
     )
 }

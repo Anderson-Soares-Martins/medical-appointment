@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+    postgres:
+        image: postgres:latest
+        environment:
+            POSTGRES_USER: admin
+            POSTGRES_PASSWORD: admin123
+            POSTGRES_DB: medical_appointments
+        ports:
+            - '5432:5432'
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+
+    backend:
+        build: ./backend
+        ports:
+            - '3001:3001'
+        environment:
+            - DATABASE_URL=postgresql://admin:admin123@postgres:5432/medical_appointments
+            - PORT=3001
+            - JWT_SECRET=your_jwt_secret_key
+        depends_on:
+            - postgres
+        volumes:
+            - ./backend:/app
+            - /app/node_modules
+
+volumes:
+    postgres_data:

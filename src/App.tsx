@@ -4,7 +4,7 @@ import {
     Route,
     Navigate,
 } from 'react-router-dom'
-import { useStore } from './lib/store/useStore'
+import { useAuthStore } from './lib/store/auth'
 import { MainLayout } from './components/layout/MainLayout'
 
 // Patient Pages
@@ -23,9 +23,10 @@ import DoctorProfile from './pages/doctor/Profile'
 import Login from './pages/auth/Login'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
-    const user = useStore((state) => state.user)
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+    const user = useAuthStore((state) => state.user)
 
-    if (!user) {
+    if (!isAuthenticated || !user) {
         return <Navigate to="/login" replace />
     }
 
@@ -33,13 +34,30 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-    const user = useStore((state) => state.user)
+    const user = useAuthStore((state) => state.user)
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
 
     return (
         <Router>
             <Routes>
                 {/* Public Routes */}
-                <Route path="/login" element={<Login />} />
+                <Route
+                    path="/login"
+                    element={
+                        isAuthenticated ? (
+                            <Navigate
+                                to={
+                                    user?.role === 'DOCTOR'
+                                        ? '/doctor'
+                                        : '/patient'
+                                }
+                                replace
+                            />
+                        ) : (
+                            <Login />
+                        )
+                    }
+                />
 
                 {/* Protected Patient Routes */}
                 <Route

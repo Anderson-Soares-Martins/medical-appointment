@@ -1,109 +1,100 @@
-import type { User, Appointment, Doctor, Patient } from '../types'
-import { mockAuthApi } from './mockApi'
+import axios from 'axios'
+import type { InternalAxiosRequestConfig } from 'axios'
+import type { AuthResponse, User, Appointment } from '../types/api'
 
-// In a real application, this would be an environment variable
-const API_BASE_URL = '/api'
+const api = axios.create({
+    baseURL: 'http://localhost:3001/api',
+})
 
-// Helper function for making API requests
-async function fetchApi<T>(
-    endpoint: string,
-    options: RequestInit = {}
-): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-        },
-    })
-
-    if (!response.ok) {
-        throw new Error(`API Error: ${response.statusText}`)
+// Add token to requests if available
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+    const token = localStorage.getItem('token')
+    if (token) {
+        config.headers = config.headers || {}
+        config.headers.Authorization = `Bearer ${token}`
     }
+    return config
+})
 
-    return response.json()
-}
-
-// Auth API
-export const authApi = {
-    login: async (
-        email: string,
-        password: string
-    ): Promise<{ user: User; token: string }> => {
-        // Use o mock da API em vez de fazer uma chamada real
-        return mockAuthApi.login(email, password)
-    },
-
-    logout: async (): Promise<void> => {
-        return fetchApi('/auth/logout', { method: 'POST' })
-    },
-}
-
-// Appointments API
-export const appointmentsApi = {
-    getAll: async (): Promise<Appointment[]> => {
-        return fetchApi('/appointments')
-    },
-
-    getById: async (id: string): Promise<Appointment> => {
-        return fetchApi(`/appointments/${id}`)
-    },
-
-    create: async (
-        appointment: Omit<Appointment, 'id'>
-    ): Promise<Appointment> => {
-        return fetchApi('/appointments', {
-            method: 'POST',
-            body: JSON.stringify(appointment),
+export const auth = {
+    login: async (email: string, password: string): Promise<AuthResponse> => {
+        const response = await api.post<AuthResponse>('/auth/login', {
+            email,
+            password,
         })
+        localStorage.setItem('token', response.data.token)
+        localStorage.setItem('user', JSON.stringify(response.data.user))
+        return response.data
+    },
+
+    register: async (userData: {
+        email: string
+        password: string
+        name: string
+        role: 'PATIENT' | 'DOCTOR'
+        specialty?: string
+    }): Promise<AuthResponse> => {
+        const response = await api.post<AuthResponse>(
+            '/auth/register',
+            userData
+        )
+        localStorage.setItem('token', response.data.token)
+        localStorage.setItem('user', JSON.stringify(response.data.user))
+        return response.data
+    },
+
+    logout: () => {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+    },
+}
+
+export const appointments = {
+    getAll: async (): Promise<Appointment[]> => {
+        const response = await api.get<Appointment[]>('/appointments')
+        return response.data
+    },
+
+    create: async (data: {
+        doctorId: string
+        date: string
+    }): Promise<Appointment> => {
+        const response = await api.post<Appointment>('/appointments', data)
+        return response.data
     },
 
     update: async (
         id: string,
-        appointment: Partial<Appointment>
+        data: { status: string; notes?: string }
     ): Promise<Appointment> => {
-        return fetchApi(`/appointments/${id}`, {
-            method: 'PATCH',
-            body: JSON.stringify(appointment),
-        })
+        const response = await api.patch<Appointment>(
+            `/appointments/${id}`,
+            data
+        )
+        return response.data
     },
 
-    cancel: async (id: string): Promise<Appointment> => {
-        return fetchApi(`/appointments/${id}/cancel`, {
-            method: 'POST',
-        })
-    },
-}
-
-// Doctors API
-export const doctorsApi = {
-    getAll: async (): Promise<Doctor[]> => {
-        return fetchApi('/doctors')
-    },
-
-    getById: async (id: string): Promise<Doctor> => {
-        return fetchApi(`/doctors/${id}`)
-    },
-
-    getAvailableSlots: async (
-        doctorId: string,
-        date: string
-    ): Promise<string[]> => {
-        return fetchApi(`/doctors/${doctorId}/available-slots?date=${date}`)
+    cancel: async (id: string): Promise<void> => {
+        await api.delete(`/appointments/${id}`)
     },
 }
 
-// Patients API
-export const patientsApi = {
-    getAll: async (): Promise<Patient[]> => {
-        return fetchApi('/patients')
+export const users = {
+    getDoctors: async (): Promise<User[]> => {
+        const response = await api.get<User[]>('/users/doctors')
+        return response.data
     },
 
-    getById: async (id: string): Promise<Patient> => {
-        return fetchApi(`/patients/${id}`)
+    getProfile: async (): Promise<User> => {
+        const response = await api.get<User>('/users/profile')
+        return response.data
     },
 
-    getMedicalHistory: async (patientId: string): Promise<Appointment[]> => {
-        return fetchApi(`/patients/${patientId}/medical-history`)
+    updateProfile: async (data: {
+        name: string
+        specialty?: string
+    }): Promise<User> => {
+        const response = await api.patch<User>('/users/profile', data)
+        return response.data
     },
 }

@@ -1,7 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useStore } from '@/lib/store/useStore'
-import { authApi } from '@/lib/services/api'
+import { useAuthStore } from '@/lib/store/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -15,8 +13,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 
 export default function Login() {
-    const navigate = useNavigate()
-    const setUser = useStore((state) => state.setUser)
+    const login = useAuthStore((state) => state.login)
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
@@ -28,12 +25,11 @@ export default function Login() {
         setIsLoading(true)
 
         try {
-            const { user, token } = await authApi.login(email, password)
-            setUser(user)
-            localStorage.setItem('token', token)
-            navigate(user.role === 'DOCTOR' ? '/doctor' : '/patient')
-        } catch {
+            await login(email, password)
+            // After successful login, the App component will handle the redirect
+        } catch (error) {
             setError('Email ou senha inválidos')
+            console.error('Login error:', error)
         } finally {
             setIsLoading(false)
         }

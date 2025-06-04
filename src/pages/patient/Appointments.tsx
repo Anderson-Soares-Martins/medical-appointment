@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Search, Calendar, Clock } from 'lucide-react'
+import { ArrowLeft, Search, Calendar } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { useStore } from '@/lib/store/useStore'
-import { doctorsApi, appointmentsApi } from '@/lib/services/api'
-import type { Doctor } from '@/lib/types'
+import { useAuthStore } from '@/lib/store/auth'
+import { useAppointmentsStore } from '@/lib/store/appointments'
+import { useDoctorsStore } from '@/lib/store/doctors'
+import type { User } from '@/lib/types/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -12,15 +13,16 @@ import { Badge } from '@/components/ui/badge'
 
 export default function PatientAppointments() {
     const navigate = useNavigate()
+    const user = useAuthStore((state) => state.user)
+    const { createAppointment } = useAppointmentsStore()
+    const { doctors, fetchDoctors, isLoading } = useDoctorsStore()
+
     const [step, setStep] = useState(1)
     const [selectedSpecialty, setSelectedSpecialty] = useState('')
-    const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null)
+    const [selectedDoctor, setSelectedDoctor] = useState<User | null>(null)
     const [selectedDate, setSelectedDate] = useState('')
     const [selectedTime, setSelectedTime] = useState('')
-    const [doctors, setDoctors] = useState<Doctor[]>([])
     const [availableSlots, setAvailableSlots] = useState<string[]>([])
-    const [isLoading, setIsLoading] = useState(false)
-    const { user, addAppointment } = useStore()
 
     const specialties = [
         'Cardiologia',
@@ -31,64 +33,53 @@ export default function PatientAppointments() {
     ]
 
     useEffect(() => {
-        const fetchDoctors = async () => {
-            if (!selectedSpecialty) return
-            setIsLoading(true)
-            try {
-                const data = await doctorsApi.getAll()
-                setDoctors(
-                    data.filter((doc) => doc.specialty === selectedSpecialty)
-                )
-            } catch (error) {
-                console.error('Failed to fetch doctors:', error)
-            } finally {
-                setIsLoading(false)
+        if (selectedSpecialty) {
+            fetchDoctors()
+        }
+    }, [selectedSpecialty, fetchDoctors])
+
+    const filteredDoctors = doctors.filter(
+        (doc) => doc.specialty === selectedSpecialty
+    )
+
+    // TODO: Implement this with a proper API endpoint
+    const generateAvailableSlots = () => {
+        const slots = []
+        const start = 8
+        const end = 17
+
+        for (let hour = start; hour <= end; hour++) {
+            for (const minute of ['00', '30']) {
+                slots.push(`${hour.toString().padStart(2, '0')}:${minute}`)
             }
         }
 
-        fetchDoctors()
-    }, [selectedSpecialty])
+        return slots
+    }
 
     useEffect(() => {
-        const fetchAvailableSlots = async () => {
-            if (!selectedDoctor || !selectedDate) return
-            setIsLoading(true)
-            try {
-                const slots = await doctorsApi.getAvailableSlots(
-                    selectedDoctor.id,
-                    selectedDate
-                )
-                setAvailableSlots(slots)
-            } catch (error) {
-                console.error('Failed to fetch available slots:', error)
-            } finally {
-                setIsLoading(false)
-            }
+        if (selectedDoctor && selectedDate) {
+            // TODO: Replace with actual API call when available
+            setAvailableSlots(generateAvailableSlots())
         }
-
-        fetchAvailableSlots()
     }, [selectedDoctor, selectedDate])
 
     const handleConfirmAppointment = async () => {
         if (!selectedDoctor || !selectedDate || !selectedTime || !user) return
 
-        setIsLoading(true)
         try {
-            const appointment = await appointmentsApi.create({
+            const dateTime = new Date(selectedDate)
+            const [hours, minutes] = selectedTime.split(':')
+            dateTime.setHours(parseInt(hours), parseInt(minutes))
+
+            await createAppointment({
                 doctorId: selectedDoctor.id,
-                patientId: user.id,
-                date: selectedDate,
-                time: selectedTime,
-                status: 'SCHEDULED',
-                type: 'Consulta Regular',
+                date: dateTime.toISOString(),
             })
 
-            addAppointment(appointment)
             navigate('/patient')
         } catch (error) {
             console.error('Failed to create appointment:', error)
-        } finally {
-            setIsLoading(false)
         }
     }
 
@@ -173,9 +164,10 @@ export default function PatientAppointments() {
                                                 : 'outline'
                                         }
                                         className="w-full justify-between h-auto py-4"
-                                        onClick={() =>
+                                        onClick={() => {
                                             setSelectedSpecialty(specialty)
-                                        }
+                                            setStep(2)
+                                        }}
                                     >
                                         <span>{specialty}</span>
                                         {selectedSpecialty === specialty && (
@@ -194,172 +186,180 @@ export default function PatientAppointments() {
                             </h2>
 
                             <div className="space-y-4">
-                                {doctors.map((doctor) => (
-                                    <Button
-                                        key={doctor.id}
-                                        variant={
-                                            selectedDoctor?.id === doctor.id
-                                                ? 'default'
-                                                : 'outline'
-                                        }
-                                        className="w-full justify-start h-auto py-4"
-                                        onClick={() =>
-                                            setSelectedDoctor(doctor)
-                                        }
-                                    >
-                                        <div className="flex items-center w-full">
-                                            <Avatar className="w-12 h-12 mr-4">
-                                                <AvatarFallback>
-                                                    {doctor.name
-                                                        .split(' ')
-                                                        .map((n) => n[0])
-                                                        .join('')}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex-1">
-                                                <h3 className="font-semibold text-left">
-                                                    {doctor.name}
-                                                </h3>
-                                                <p className="text-sm text-left">
-                                                    {doctor.specialty}
-                                                </p>
-                                                <div className="flex items-center mt-1">
-                                                    <span className="text-yellow-500">
-                                                        ★
-                                                    </span>
-                                                    <span className="text-sm ml-1">
-                                                        {doctor.rating}
-                                                    </span>
+                                {isLoading ? (
+                                    <div className="text-center py-8">
+                                        Carregando médicos...
+                                    </div>
+                                ) : filteredDoctors.length > 0 ? (
+                                    filteredDoctors.map((doctor) => (
+                                        <Button
+                                            key={doctor.id}
+                                            variant={
+                                                selectedDoctor?.id === doctor.id
+                                                    ? 'default'
+                                                    : 'outline'
+                                            }
+                                            className="w-full justify-between h-auto p-4"
+                                            onClick={() => {
+                                                setSelectedDoctor(doctor)
+                                                setStep(3)
+                                            }}
+                                        >
+                                            <div className="flex items-center">
+                                                <Avatar className="h-12 w-12 mr-4">
+                                                    <AvatarFallback>
+                                                        {doctor.name
+                                                            .split(' ')
+                                                            .map((n) => n[0])
+                                                            .join('')}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div className="text-left">
+                                                    <h3 className="font-medium">
+                                                        {doctor.name}
+                                                    </h3>
+                                                    <p className="text-sm text-gray-600">
+                                                        {doctor.specialty}
+                                                    </p>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </Button>
-                                ))}
+                                        </Button>
+                                    ))
+                                ) : (
+                                    <p className="text-center py-8 text-gray-500">
+                                        Nenhum médico encontrado para esta
+                                        especialidade.
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="mt-6 flex justify-between">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setStep(1)}
+                                >
+                                    Voltar
+                                </Button>
                             </div>
                         </>
                     )}
 
                     {step === 3 && (
                         <>
-                            <div className="mb-6">
-                                <h3 className="flex items-center text-gray-700 mb-4">
-                                    <Calendar size={18} className="mr-2" />
-                                    Selecione uma data
-                                </h3>
-                                <Input
-                                    type="date"
-                                    value={selectedDate}
-                                    onChange={(e) =>
-                                        setSelectedDate(e.target.value)
-                                    }
-                                />
+                            <h2 className="text-lg font-semibold mb-4">
+                                Escolha a data e horário
+                            </h2>
+
+                            <div className="space-y-6">
+                                <div>
+                                    <label className="block text-gray-700 mb-2">
+                                        Data da consulta
+                                    </label>
+                                    <Input
+                                        type="date"
+                                        value={selectedDate}
+                                        min={
+                                            new Date()
+                                                .toISOString()
+                                                .split('T')[0]
+                                        }
+                                        onChange={(e) =>
+                                            setSelectedDate(e.target.value)
+                                        }
+                                    />
+                                </div>
+
+                                {selectedDate && (
+                                    <div>
+                                        <label className="block text-gray-700 mb-2">
+                                            Horário disponível
+                                        </label>
+                                        <div className="grid grid-cols-4 gap-2">
+                                            {availableSlots.map((time) => (
+                                                <Button
+                                                    key={time}
+                                                    variant={
+                                                        selectedTime === time
+                                                            ? 'default'
+                                                            : 'outline'
+                                                    }
+                                                    className="py-2"
+                                                    onClick={() => {
+                                                        setSelectedTime(time)
+                                                        setStep(4)
+                                                    }}
+                                                >
+                                                    {time}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
-                            {selectedDate && (
-                                <div>
-                                    <h3 className="flex items-center text-gray-700 mb-4">
-                                        <Clock size={18} className="mr-2" />
-                                        Selecione um horário
-                                    </h3>
-                                    <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
-                                        {availableSlots.map((time) => (
-                                            <Button
-                                                key={time}
-                                                variant={
-                                                    selectedTime === time
-                                                        ? 'default'
-                                                        : 'outline'
-                                                }
-                                                onClick={() =>
-                                                    setSelectedTime(time)
-                                                }
-                                            >
-                                                {time}
-                                            </Button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
+                            <div className="mt-6 flex justify-between">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setStep(2)}
+                                >
+                                    Voltar
+                                </Button>
+                            </div>
                         </>
                     )}
 
                     {step === 4 && (
                         <>
-                            <h2 className="text-xl font-semibold text-center mb-6">
+                            <h2 className="text-lg font-semibold mb-4">
                                 Confirmar Agendamento
                             </h2>
 
-                            <Card className="bg-gray-50 mb-6">
-                                <CardContent className="p-6">
-                                    <div className="flex items-start mb-4">
-                                        <Avatar className="w-12 h-12 mr-4">
-                                            <AvatarFallback>
-                                                {selectedDoctor?.name
-                                                    .split(' ')
-                                                    .map((n) => n[0])
-                                                    .join('')}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <h3 className="font-semibold">
-                                                {selectedDoctor?.name}
-                                            </h3>
-                                            <p className="text-gray-600 text-sm">
-                                                {selectedDoctor?.specialty}
-                                            </p>
-                                        </div>
+                            <div className="space-y-4">
+                                <div className="p-4 bg-gray-50 rounded-lg">
+                                    <h3 className="font-medium mb-2">
+                                        Detalhes da Consulta
+                                    </h3>
+                                    <div className="space-y-2 text-gray-600">
+                                        <p>
+                                            <strong>Médico:</strong>{' '}
+                                            {selectedDoctor?.name}
+                                        </p>
+                                        <p>
+                                            <strong>Especialidade:</strong>{' '}
+                                            {selectedDoctor?.specialty}
+                                        </p>
+                                        <p>
+                                            <strong>Data:</strong>{' '}
+                                            {new Date(
+                                                selectedDate
+                                            ).toLocaleDateString()}
+                                        </p>
+                                        <p>
+                                            <strong>Horário:</strong>{' '}
+                                            {selectedTime}
+                                        </p>
                                     </div>
+                                </div>
 
-                                    <div className="flex justify-between border-t pt-4">
-                                        <div>
-                                            <p className="text-gray-500 text-sm">
-                                                Data
-                                            </p>
-                                            <p className="font-semibold">
-                                                {selectedDate}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <p className="text-gray-500 text-sm">
-                                                Hora
-                                            </p>
-                                            <p className="font-semibold">
-                                                {selectedTime}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                                <div className="flex justify-between">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setStep(3)}
+                                    >
+                                        Voltar
+                                    </Button>
+                                    <Button
+                                        onClick={handleConfirmAppointment}
+                                        disabled={isLoading}
+                                    >
+                                        {isLoading
+                                            ? 'Confirmando...'
+                                            : 'Confirmar Agendamento'}
+                                    </Button>
+                                </div>
+                            </div>
                         </>
                     )}
-
-                    <div className="mt-8 flex justify-between">
-                        <Button
-                            variant="outline"
-                            onClick={() => setStep((s) => Math.max(1, s - 1))}
-                            disabled={step === 1}
-                        >
-                            Voltar
-                        </Button>
-                        <Button
-                            onClick={() => {
-                                if (step === 4) {
-                                    handleConfirmAppointment()
-                                } else {
-                                    setStep((s) => s + 1)
-                                }
-                            }}
-                            disabled={
-                                (step === 1 && !selectedSpecialty) ||
-                                (step === 2 && !selectedDoctor) ||
-                                (step === 3 &&
-                                    (!selectedDate || !selectedTime)) ||
-                                isLoading
-                            }
-                        >
-                            {step === 4 ? 'Confirmar Agendamento' : 'Continuar'}
-                        </Button>
-                    </div>
                 </CardContent>
             </Card>
         </div>

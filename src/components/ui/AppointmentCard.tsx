@@ -1,5 +1,5 @@
 import { Calendar, Clock } from 'lucide-react'
-import type { Appointment, Doctor, Patient } from '@/lib/types'
+import type { Appointment } from '@/lib/types/api'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -8,8 +8,6 @@ import { Separator } from '@/components/ui/separator'
 
 interface AppointmentCardProps {
     appointment: Appointment
-    doctor?: Doctor
-    patient?: Patient
     showActions?: boolean
     onCancel?: (id: string) => void
     onViewDetails?: (id: string) => void
@@ -17,8 +15,6 @@ interface AppointmentCardProps {
 
 export function AppointmentCard({
     appointment,
-    doctor,
-    patient,
     showActions = true,
     onCancel,
     onViewDetails,
@@ -55,6 +51,19 @@ export function AppointmentCard({
         )
     }
 
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString)
+        return date.toLocaleDateString('pt-BR')
+    }
+
+    const formatTime = (dateString: string) => {
+        const date = new Date(dateString)
+        return date.toLocaleTimeString('pt-BR', {
+            hour: '2-digit',
+            minute: '2-digit',
+        })
+    }
+
     return (
         <Card className="hover:shadow-lg transition-shadow">
             <CardContent className="p-4">
@@ -62,7 +71,7 @@ export function AppointmentCard({
                     <div className="flex items-start space-x-4">
                         <Avatar className="h-12 w-12 bg-blue-100">
                             <AvatarFallback className="bg-blue-100 text-blue-600">
-                                {(doctor?.name || patient?.name || '')
+                                {appointment.doctor.name
                                     .split(' ')
                                     .map((n) => n[0])
                                     .join('')}
@@ -70,19 +79,19 @@ export function AppointmentCard({
                         </Avatar>
                         <div>
                             <h3 className="font-medium text-gray-900">
-                                {doctor?.name || patient?.name}
+                                {appointment.doctor.name}
                             </h3>
                             <p className="text-sm text-gray-600">
-                                {doctor?.specialty}
+                                {appointment.doctor.specialty}
                             </p>
                             <div className="flex items-center mt-2 space-x-4">
                                 <div className="flex items-center text-gray-500 text-sm">
                                     <Calendar className="h-4 w-4 mr-1" />
-                                    <span>{appointment.date}</span>
+                                    <span>{formatDate(appointment.date)}</span>
                                 </div>
                                 <div className="flex items-center text-gray-500 text-sm">
                                     <Clock className="h-4 w-4 mr-1" />
-                                    <span>{appointment.time}</span>
+                                    <span>{formatTime(appointment.date)}</span>
                                 </div>
                             </div>
                         </div>

@@ -1,15 +1,18 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Calendar, ClipboardList, User } from 'lucide-react'
-import { useStore } from '@/lib/store/useStore'
-import { appointmentsApi } from '@/lib/services/api'
+import { useAuthStore } from '@/lib/store/auth'
+import { useAppointmentsStore } from '@/lib/store/appointments'
 import { AppointmentCard } from '@/components/ui/AppointmentCard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
 export default function PatientDashboard() {
     const navigate = useNavigate()
-    const { user, appointments, setAppointments } = useStore()
+    const user = useAuthStore((state) => state.user)
+    const { appointments, fetchAppointments, cancelAppointment } =
+        useAppointmentsStore()
+
     const currentDate = new Date().toLocaleDateString('pt-BR', {
         weekday: 'long',
         year: 'numeric',
@@ -18,17 +21,8 @@ export default function PatientDashboard() {
     })
 
     useEffect(() => {
-        const fetchAppointments = async () => {
-            try {
-                const data = await appointmentsApi.getAll()
-                setAppointments(data)
-            } catch (error) {
-                console.error('Failed to fetch appointments:', error)
-            }
-        }
-
         fetchAppointments()
-    }, [setAppointments])
+    }, [fetchAppointments])
 
     const upcomingAppointments = appointments.filter(
         (apt) => apt.status === 'SCHEDULED'
@@ -121,21 +115,7 @@ export default function PatientDashboard() {
                                 <AppointmentCard
                                     key={appointment.id}
                                     appointment={appointment}
-                                    onCancel={(id) => {
-                                        // Handle cancellation
-                                        appointmentsApi.cancel(id).then(() => {
-                                            setAppointments(
-                                                appointments.map((apt) =>
-                                                    apt.id === id
-                                                        ? {
-                                                              ...apt,
-                                                              status: 'CANCELLED' as const,
-                                                          }
-                                                        : apt
-                                                )
-                                            )
-                                        })
-                                    }}
+                                    onCancel={cancelAppointment}
                                     onViewDetails={(id) => {
                                         navigate(`/patient/appointments/${id}`)
                                     }}

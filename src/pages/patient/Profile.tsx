@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { ArrowLeft, Save } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { useStore } from '@/lib/store/useStore'
-import type { Patient } from '@/lib/types'
+import { useAuthStore } from '@/lib/store/auth'
+import { useAppointmentsStore } from '@/lib/store/appointments'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -11,13 +11,12 @@ import { Separator } from '@/components/ui/separator'
 
 export default function PatientProfile() {
     const navigate = useNavigate()
-    const { user } = useStore()
+    const user = useAuthStore((state) => state.user)
+    const { appointments } = useAppointmentsStore()
     const [isEditing, setIsEditing] = useState(false)
-    const [formData, setFormData] = useState<Partial<Patient>>({
+    const [formData, setFormData] = useState({
         name: user?.name || '',
         email: user?.email || '',
-        phone: '',
-        dateOfBirth: '',
     })
     const [isSaving, setIsSaving] = useState(false)
 
@@ -26,7 +25,7 @@ export default function PatientProfile() {
         setIsSaving(true)
 
         try {
-            // In a real app, this would call an API endpoint
+            // TODO: Implement profile update with API
             await new Promise((resolve) => setTimeout(resolve, 1000))
             setIsEditing(false)
         } catch (error) {
@@ -35,6 +34,20 @@ export default function PatientProfile() {
             setIsSaving(false)
         }
     }
+
+    const completedAppointments = appointments.filter(
+        (apt) => apt.status === 'COMPLETED'
+    )
+
+    const lastAppointment = [...appointments]
+        .filter((apt) => apt.status === 'COMPLETED')
+        .sort(
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        )[0]
+
+    const nextAppointment = appointments.find(
+        (apt) => apt.status === 'SCHEDULED' && new Date(apt.date) > new Date()
+    )
 
     return (
         <div>
@@ -98,40 +111,6 @@ export default function PatientProfile() {
                                 />
                             </div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="phone">Telefone</Label>
-                                <Input
-                                    id="phone"
-                                    type="tel"
-                                    value={formData.phone}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            phone: e.target.value,
-                                        })
-                                    }
-                                    disabled={!isEditing}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="dateOfBirth">
-                                    Data de Nascimento
-                                </Label>
-                                <Input
-                                    id="dateOfBirth"
-                                    type="date"
-                                    value={formData.dateOfBirth}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            dateOfBirth: e.target.value,
-                                        })
-                                    }
-                                    disabled={!isEditing}
-                                />
-                            </div>
-
                             {isEditing && (
                                 <div className="flex justify-end space-x-4">
                                     <Button
@@ -174,32 +153,59 @@ export default function PatientProfile() {
                                     Total de Consultas
                                 </p>
                                 <p className="text-gray-600">
-                                    12 consultas realizadas
+                                    {completedAppointments.length} consultas
+                                    realizadas
                                 </p>
                             </div>
                             <div className="text-2xl font-bold text-blue-600">
-                                12
+                                {completedAppointments.length}
                             </div>
                         </div>
                         <Separator />
                         <div className="flex justify-between py-3">
                             <div>
                                 <p className="font-medium">Última Consulta</p>
-                                <p className="text-gray-600">
-                                    Dr. João Silva - Cardiologia
-                                </p>
+                                {lastAppointment ? (
+                                    <p className="text-gray-600">
+                                        Dr(a). {lastAppointment.doctor.name} -{' '}
+                                        {lastAppointment.doctor.specialty}
+                                    </p>
+                                ) : (
+                                    <p className="text-gray-600">
+                                        Nenhuma consulta realizada
+                                    </p>
+                                )}
                             </div>
-                            <div className="text-gray-600">15/03/2024</div>
+                            {lastAppointment && (
+                                <div className="text-gray-600">
+                                    {new Date(
+                                        lastAppointment.date
+                                    ).toLocaleDateString()}
+                                </div>
+                            )}
                         </div>
                         <Separator />
                         <div className="flex justify-between py-3">
                             <div>
                                 <p className="font-medium">Próxima Consulta</p>
-                                <p className="text-gray-600">
-                                    Dra. Maria Santos - Dermatologia
-                                </p>
+                                {nextAppointment ? (
+                                    <p className="text-gray-600">
+                                        Dr(a). {nextAppointment.doctor.name} -{' '}
+                                        {nextAppointment.doctor.specialty}
+                                    </p>
+                                ) : (
+                                    <p className="text-gray-600">
+                                        Nenhuma consulta agendada
+                                    </p>
+                                )}
                             </div>
-                            <div className="text-gray-600">28/03/2024</div>
+                            {nextAppointment && (
+                                <div className="text-gray-600">
+                                    {new Date(
+                                        nextAppointment.date
+                                    ).toLocaleDateString()}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </CardContent>
