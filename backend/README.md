@@ -26,7 +26,9 @@
    [Docker&nbsp;Compose](https://docs.docker.com/compose/) instalados.
 2. Na raiz do projeto execute:
    ```bash
-   docker-compose up --build
+   docker compose up --build
+   # Para limpar tudo depois, rode
+   docker compose down -v
    ```
    Isso irá subir um contêiner PostgreSQL e o backend na porta `3001`.
 
