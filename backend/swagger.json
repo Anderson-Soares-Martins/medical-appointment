@@ -1,0 +1,267 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "API - Sistema de Agendamento de Consultas",
+    "version": "1.0.0",
+    "description": "Documentação da API para o sistema de agendamento de consultas médicas."
+  },
+  "servers": [
+    {
+      "url": "/api"
+    }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Registrar novo usuário",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "PATIENT",
+                      "DOCTOR"
+                    ]
+                  },
+                  "specialty": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "email",
+                  "password",
+                  "name",
+                  "role"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Usuário registrado com sucesso"
+          },
+          "400": {
+            "description": "Email já registrado"
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Login de usuário",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "email",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login bem-sucedido"
+          },
+          "401": {
+            "description": "Credenciais inválidas"
+          }
+        }
+      }
+    },
+    "/appointments": {
+      "get": {
+        "summary": "Listar consultas do usuário logado",
+        "responses": {
+          "200": {
+            "description": "Lista de consultas"
+          },
+          "401": {
+            "description": "Não autenticado"
+          }
+        }
+      },
+      "post": {
+        "summary": "Agendar nova consulta",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "doctorId": {
+                    "type": "string"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "doctorId",
+                  "date"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Consulta agendada"
+          },
+          "409": {
+            "description": "Conflito de horário"
+          }
+        }
+      }
+    },
+    "/appointments/{id}": {
+      "patch": {
+        "summary": "Atualizar status da consulta (apenas médico)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "SCHEDULED",
+                      "COMPLETED",
+                      "CANCELLED",
+                      "NO_SHOW"
+                    ]
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Consulta atualizada"
+          },
+          "403": {
+            "description": "Apenas médicos podem atualizar"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Cancelar consulta",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consulta cancelada"
+          },
+          "404": {
+            "description": "Consulta não encontrada"
+          }
+        }
+      }
+    },
+    "/users/doctors": {
+      "get": {
+        "summary": "Listar todos os médicos",
+        "responses": {
+          "200": {
+            "description": "Lista de médicos"
+          }
+        }
+      }
+    },
+    "/users/profile": {
+      "get": {
+        "summary": "Obter perfil do usuário logado",
+        "responses": {
+          "200": {
+            "description": "Perfil do usuário"
+          },
+          "404": {
+            "description": "Usuário não encontrado"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Atualizar perfil do usuário logado",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "specialty": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Perfil atualizado"
+          }
+        }
+      }
+    }
+  }
+}

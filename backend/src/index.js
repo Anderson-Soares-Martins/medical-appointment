@@ -4,6 +4,9 @@ const { PrismaClient } = require('@prisma/client');
 const authRoutes = require('./routes/auth');
 const appointmentRoutes = require('./routes/appointments');
 const userRoutes = require('./routes/users');
+const docsRoutes = require('./routes/docs');
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('../swagger.json');
 
 const prisma = new PrismaClient();
 const app = express();
@@ -20,6 +23,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const PORT = process.env.PORT || 3001;
 
