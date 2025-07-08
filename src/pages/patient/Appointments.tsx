@@ -68,13 +68,13 @@ export default function PatientAppointments() {
         if (!selectedDoctor || !selectedDate || !selectedTime || !user) return
 
         try {
-            const dateTime = new Date(selectedDate)
+            // Create date string with the correct timezone handling
             const [hours, minutes] = selectedTime.split(':')
-            dateTime.setHours(parseInt(hours), parseInt(minutes))
+            const appointmentDate = `${selectedDate}T${hours}:${minutes}:00.000Z`
 
             await createAppointment({
                 doctorId: selectedDoctor.id,
-                date: dateTime.toISOString(),
+                date: appointmentDate,
             })
 
             navigate('/patient')

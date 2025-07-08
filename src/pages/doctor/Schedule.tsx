@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
     ArrowLeft,
     Calendar,
@@ -7,7 +7,7 @@ import {
     ChevronRight,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { useStore } from '@/lib/store/useStore'
+import { useAppointmentsStore } from '@/lib/store/appointments'
 import { AppointmentCard } from '@/components/ui/AppointmentCard'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -16,9 +16,13 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 export default function DoctorSchedule() {
     const navigate = useNavigate()
-    const { appointments } = useStore()
+    const { appointments, fetchAppointments } = useAppointmentsStore()
     const [selectedDate, setSelectedDate] = useState(new Date())
     const [view, setView] = useState<'day' | 'week'>('day')
+
+    useEffect(() => {
+        fetchAppointments()
+    }, [fetchAppointments])
 
     const formatDate = (date: Date) => {
         return date.toLocaleDateString('pt-BR', {
@@ -74,6 +78,20 @@ export default function DoctorSchedule() {
             newDate.setDate(newDate.getDate() + 7)
         }
         setSelectedDate(newDate)
+    }
+
+    const getAppointmentForSlot = (date: Date, time: string) => {
+        const dateStr = date.toISOString().split('T')[0]
+        return appointments.find((apt) => {
+            const aptDate = new Date(apt.date)
+            return (
+                aptDate.toISOString().split('T')[0] === dateStr &&
+                aptDate.toLocaleTimeString('pt-BR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                }) === time
+            )
+        })
     }
 
     return (
@@ -143,12 +161,9 @@ export default function DoctorSchedule() {
                 <Card>
                     <CardContent className="p-0">
                         {timeSlots.map((time) => {
-                            const appointment = appointments.find(
-                                (apt) =>
-                                    apt.date ===
-                                        selectedDate
-                                            .toISOString()
-                                            .split('T')[0] && apt.time === time
+                            const appointment = getAppointmentForSlot(
+                                selectedDate,
+                                time
                             )
 
                             return (
@@ -226,14 +241,8 @@ export default function DoctorSchedule() {
                                     className="border-r last:border-r-0"
                                 >
                                     {timeSlots.map((time) => {
-                                        const appointment = appointments.find(
-                                            (apt) =>
-                                                apt.date ===
-                                                    date
-                                                        .toISOString()
-                                                        .split('T')[0] &&
-                                                apt.time === time
-                                        )
+                                        const appointment =
+                                            getAppointmentForSlot(date, time)
 
                                         return (
                                             <div
@@ -245,16 +254,24 @@ export default function DoctorSchedule() {
                                                         <CardContent className="p-2">
                                                             <div className="font-medium truncate">
                                                                 {
-                                                                    appointment.type
+                                                                    appointment
+                                                                        .patient
+                                                                        .name
                                                                 }
                                                             </div>
                                                             <Badge
                                                                 variant="outline"
                                                                 className="mt-1"
                                                             >
-                                                                {
-                                                                    appointment.time
-                                                                }
+                                                                {new Date(
+                                                                    appointment.date
+                                                                ).toLocaleTimeString(
+                                                                    'pt-BR',
+                                                                    {
+                                                                        hour: '2-digit',
+                                                                        minute: '2-digit',
+                                                                    }
+                                                                )}
                                                             </Badge>
                                                         </CardContent>
                                                     </Card>
