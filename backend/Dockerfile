@@ -1,15 +1,21 @@
+# Escolhe imagem base Node
 FROM node:18
+
+# Cria diretório de trabalho
 WORKDIR /app
 
-COPY package.json ./
-COPY pnpm-lock.yaml ./
-RUN npm install
+# Copia arquivos de dependência
+COPY package.json pnpm-lock.yaml ./
 
-COPY . .
+# Instala pnpm e dependências
+RUN npm install -g pnpm && pnpm install
+
+# Copia o schema do Prisma e gera o client
+COPY prisma ./prisma
 RUN npx prisma generate
 
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+# Copia o restante do código
+COPY . .
 
-EXPOSE 3001
-CMD ["docker-entrypoint.sh"]
+EXPOSE 3000
+CMD ["pnpm", "start"]

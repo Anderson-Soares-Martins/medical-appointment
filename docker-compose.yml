@@ -22,5 +22,21 @@ services:
     ports:
       - "3001:3001"
 
+  migrate:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/medical
+    depends_on:
+      - db
+    command: sh -c "npx prisma migrate deploy"
+
+  seed:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/medical
+    depends_on:
+      - db
+    command: sh -c "npx prisma migrate deploy && pnpm exec node scripts/seed.js"
+
 volumes:
   db-data:
