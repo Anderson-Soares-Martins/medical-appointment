@@ -1,21 +1,15 @@
-# Escolhe imagem base Node
-FROM node:18
+FROM node:20
 
-# Cria diretório de trabalho
 WORKDIR /app
 
-# Copia arquivos de dependência
 COPY package.json pnpm-lock.yaml ./
-
-# Instala pnpm e dependências
 RUN npm install -g pnpm && pnpm install
 
-# Copia o schema do Prisma e gera o client
-COPY prisma ./prisma
-RUN npx prisma generate
-
-# Copia o restante do código
 COPY . .
 
-EXPOSE 3000
-CMD ["pnpm", "start"]
+# Garante que o Prisma gere o client ao buildar
+RUN npx prisma generate
+
+EXPOSE 3001
+
+CMD ["pnpm", "dev"] 
