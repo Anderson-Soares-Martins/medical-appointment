@@ -20,6 +20,18 @@
     npm start
     ```
 
+## Rodando com Docker
+
+1. Garanta que você tenha o [Docker](https://www.docker.com/) e o
+   [Docker&nbsp;Compose](https://docs.docker.com/compose/) instalados.
+2. Na raiz do projeto execute:
+   ```bash
+   docker compose up --build
+   # Para limpar tudo depois, rode
+   docker compose down -v
+   ```
+   Isso irá subir um contêiner PostgreSQL e o backend na porta `3001`.
+
 ## Notificações automáticas
 
 As notificações de agendamento, cancelamento e confirmação de consultas são simuladas via console (mock). Para produção, integre um serviço real de e-mail/SMS em `src/utils/email.js`.
