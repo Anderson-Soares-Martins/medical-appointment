@@ -4,48 +4,69 @@ import {
     isToday,
     isTomorrow,
     isYesterday,
+    isValid,
 } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 export const formatDate = (date: string | Date): string => {
-    return format(new Date(date), 'dd/MM/yyyy', { locale: ptBR })
+    const dateObj = new Date(date)
+    if (!isValid(dateObj)) return 'Data inválida'
+    return format(dateObj, 'dd/MM/yyyy', { locale: ptBR })
 }
 
 export const formatTime = (date: string | Date): string => {
-    return format(new Date(date), 'HH:mm', { locale: ptBR })
+    const dateObj = new Date(date)
+    if (!isValid(dateObj)) return 'Horário inválido'
+    return format(dateObj, 'HH:mm', { locale: ptBR })
 }
 
 export const formatDateTime = (date: string | Date): string => {
-    return format(new Date(date), 'dd/MM/yyyy HH:mm', { locale: ptBR })
+    const dateObj = new Date(date)
+    if (!isValid(dateObj)) return 'Data/Hora inválida'
+    return format(dateObj, 'dd/MM/yyyy HH:mm', { locale: ptBR })
 }
 
 export const formatDateTimeShort = (date: string | Date): string => {
-    return format(new Date(date), 'dd/MM HH:mm', { locale: ptBR })
+    const dateObj = new Date(date)
+    if (!isValid(dateObj)) return 'Data/Hora inválida'
+    return format(dateObj, 'dd/MM HH:mm', { locale: ptBR })
 }
 
 export const formatRelativeTime = (date: string | Date): string => {
     const dateObj = new Date(date)
 
-    if (isToday(dateObj)) {
-        return `Hoje às ${formatTime(date)}`
+    // Validação para datas inválidas
+    if (!isValid(dateObj) || isNaN(dateObj.getTime())) {
+        return 'Data inválida'
     }
 
-    if (isTomorrow(dateObj)) {
-        return `Amanhã às ${formatTime(date)}`
-    }
+    try {
+        if (isToday(dateObj)) {
+            return `Hoje às ${formatTime(date)}`
+        }
 
-    if (isYesterday(dateObj)) {
-        return `Ontem às ${formatTime(date)}`
-    }
+        if (isTomorrow(dateObj)) {
+            return `Amanhã às ${formatTime(date)}`
+        }
 
-    return formatDistanceToNow(dateObj, {
-        addSuffix: true,
-        locale: ptBR,
-    })
+        if (isYesterday(dateObj)) {
+            return `Ontem às ${formatTime(date)}`
+        }
+
+        return formatDistanceToNow(dateObj, {
+            addSuffix: true,
+            locale: ptBR,
+        })
+    } catch (error) {
+        console.error('Erro ao formatar data relativa:', error)
+        return 'Data inválida'
+    }
 }
 
 export const formatDateForInput = (date: string | Date): string => {
-    return format(new Date(date), 'yyyy-MM-dd')
+    const dateObj = new Date(date)
+    if (!isValid(dateObj)) return ''
+    return format(dateObj, 'yyyy-MM-dd')
 }
 
 export const formatTimeForInput = (date: string | Date): string => {
