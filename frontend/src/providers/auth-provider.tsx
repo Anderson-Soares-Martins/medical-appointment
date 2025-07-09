@@ -34,11 +34,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const currentUser = getCurrentUser()
 
                 if (token && currentUser) {
-                    setUser(currentUser)
+                    // Validar se o token ainda é válido fazendo uma chamada para o backend
+                    try {
+                        const validUser = await authService.getProfile()
+                        setUser(validUser)
+                    } catch (error) {
+                        // Token inválido, limpar dados de autenticação
+                        console.warn(
+                            'Token inválido durante inicialização:',
+                            error
+                        )
+                        clearAuthData()
+                        setUser(null)
+                    }
+                } else {
+                    // Não há token ou usuário armazenado
+                    setUser(null)
                 }
             } catch (error) {
                 console.error('Auth initialization error:', error)
                 clearAuthData()
+                setUser(null)
             } finally {
                 setLoading(false)
             }
@@ -53,11 +69,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setAuthData(response)
             setUser(response.user)
 
-            // Aguardar um pouco para garantir que o estado foi atualizado
-            setTimeout(() => {
-                router.push('/dashboard')
-                router.refresh() // Força atualização da página
-            }, 100)
+            // Redirecionamento mais rápido após definir o estado
+            router.push('/dashboard')
         } catch (error) {
             console.error('Login error:', error)
             throw error
@@ -70,11 +83,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setAuthData(response)
             setUser(response.user)
 
-            // Aguardar um pouco para garantir que o estado foi atualizado
-            setTimeout(() => {
-                router.push('/dashboard')
-                router.refresh() // Força atualização da página
-            }, 100)
+            // Redirecionamento mais rápido após definir o estado
+            router.push('/dashboard')
         } catch (error) {
             console.error('Register error:', error)
             throw error
@@ -90,7 +100,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             clearAuthData()
             setUser(null)
             router.push('/login')
-            router.refresh() // Força atualização da página
         }
     }
 

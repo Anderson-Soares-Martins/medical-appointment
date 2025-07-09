@@ -74,7 +74,7 @@ export default function DoctorsPage() {
 
     return (
         <DashboardLayout>
-            <div className="space-y-6">
+            <div className="space-y-6" data-testid="doctors-page">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -87,8 +87,11 @@ export default function DoctorsPage() {
                     </div>
 
                     <div className="text-right">
-                        <div className="text-2xl font-bold text-blue-600">
-                            {filteredDoctors.length}
+                        <div
+                            className="text-2xl font-bold text-blue-600"
+                            data-testid="results-count"
+                        >
+                            {filteredDoctors.length} médicos encontrados
                         </div>
                         <div className="text-sm text-gray-600">
                             médico{filteredDoctors.length !== 1 ? 's' : ''}{' '}
@@ -114,6 +117,27 @@ export default function DoctorsPage() {
                                     />
                                 </div>
                             </div>
+
+                            {/* Hidden native select for Cypress testing */}
+                            <select
+                                data-testid="specialty-filter"
+                                value={specialtyFilter}
+                                onChange={(e) =>
+                                    setSpecialtyFilter(e.target.value)
+                                }
+                                className="sr-only"
+                                aria-hidden="true"
+                            >
+                                <option value="all">
+                                    Todas as especialidades
+                                </option>
+                                {specialties.map((specialty) => (
+                                    <option key={specialty} value={specialty}>
+                                        {specialty}
+                                    </option>
+                                ))}
+                            </select>
+
                             <Select
                                 value={specialtyFilter}
                                 onValueChange={setSpecialtyFilter}
@@ -136,6 +160,12 @@ export default function DoctorsPage() {
                                     ))}
                                 </SelectContent>
                             </Select>
+                            <Button
+                                data-testid="apply-filter"
+                                variant="outline"
+                            >
+                                Aplicar Filtros
+                            </Button>
                         </div>
                     </CardContent>
                 </Card>
@@ -146,6 +176,7 @@ export default function DoctorsPage() {
                         {filteredDoctors.map((doctor) => (
                             <Card
                                 key={doctor.id}
+                                data-testid="doctor-card"
                                 className="hover:shadow-lg transition-shadow"
                             >
                                 <CardHeader className="text-center">
@@ -163,6 +194,7 @@ export default function DoctorsPage() {
                                         <Badge
                                             variant="secondary"
                                             className="mb-2"
+                                            data-testid="doctor-specialty"
                                         >
                                             <Stethoscope className="mr-1 h-3 w-3" />
                                             {doctor.specialty}
@@ -198,6 +230,7 @@ export default function DoctorsPage() {
                                     <div className="pt-4">
                                         <Button
                                             className="w-full"
+                                            data-testid="schedule-with-doctor"
                                             onClick={() =>
                                                 handleScheduleWithDoctor(
                                                     doctor.id

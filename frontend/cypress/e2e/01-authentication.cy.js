@@ -52,7 +52,7 @@ describe('UC01 - Autenticação', () => {
       cy.get('[data-testid="name-input"]').type(newUser.name)
       cy.get('[data-testid="email-input"]').type(newUser.email)
       cy.get('[data-testid="password-input"]').type(newUser.password)
-      cy.get('[data-testid="role-select"]').select(newUser.role)
+      // Role defaults to PATIENT which matches newUser.role, so no need to change it
       cy.get('[data-testid="register-button"]').click()
 
       // Then: Deve ser redirecionado para dashboard (login automático)
@@ -78,7 +78,10 @@ describe('UC01 - Autenticação', () => {
       cy.url().should('include', '/login')
 
       // And: Deve exibir mensagem de erro (verificar se existe)
-      cy.get('body').should('contain', 'inválido').or('contain', 'incorreto').or('contain', 'erro')
+      cy.get('body').should('satisfy', ($body) => {
+        const text = $body.text().toLowerCase()
+        return text.includes('inválido') || text.includes('incorreto') || text.includes('erro')
+      })
     })
   })
 }) 

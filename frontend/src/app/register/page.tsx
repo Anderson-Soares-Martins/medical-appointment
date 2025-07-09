@@ -21,7 +21,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-import { useRegister } from '@/hooks/use-auth'
+import { useAuth } from '@/providers/auth-provider'
 import { registerSchema, RegisterFormData } from '@/utils/validations'
 import { toast } from 'sonner'
 import {
@@ -38,7 +38,8 @@ import AuthRedirect from '@/components/common/auth-redirect'
 export default function RegisterPage() {
     const [showPassword, setShowPassword] = useState(false)
     const [role, setRole] = useState<'PATIENT' | 'DOCTOR'>('PATIENT')
-    const registerMutation = useRegister()
+    const [isLoading, setIsLoading] = useState(false)
+    const { register: registerUser } = useAuth()
 
     const {
         register,
@@ -58,12 +59,16 @@ export default function RegisterPage() {
 
     const onSubmit = async (data: RegisterFormData) => {
         try {
-            await registerMutation.mutateAsync(data)
+            setIsLoading(true)
+            await registerUser(data)
             toast.success('Conta criada com sucesso!')
+            // Redirection is handled automatically by AuthProvider
         } catch (error) {
             const errorMessage =
                 error instanceof Error ? error.message : 'Erro ao criar conta'
             toast.error(errorMessage)
+        } finally {
+            setIsLoading(false)
         }
     }
 
@@ -81,6 +86,7 @@ export default function RegisterPage() {
                     </CardHeader>
                     <CardContent>
                         <form
+                            data-testid="register-form"
                             onSubmit={handleSubmit(onSubmit)}
                             className="space-y-4"
                         >
@@ -90,6 +96,7 @@ export default function RegisterPage() {
                                     <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                                     <Input
                                         id="name"
+                                        data-testid="name-input"
                                         type="text"
                                         placeholder="Seu nome completo"
                                         className="pl-10"
@@ -109,6 +116,7 @@ export default function RegisterPage() {
                                     <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                                     <Input
                                         id="email"
+                                        data-testid="email-input"
                                         type="email"
                                         placeholder="seu@email.com"
                                         className="pl-10"
@@ -128,6 +136,7 @@ export default function RegisterPage() {
                                     <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                                     <Input
                                         id="password"
+                                        data-testid="password-input"
                                         type={
                                             showPassword ? 'text' : 'password'
                                         }
@@ -160,7 +169,7 @@ export default function RegisterPage() {
                                         setRole(value as 'PATIENT' | 'DOCTOR')
                                     }
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger data-testid="role-select">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -209,11 +218,12 @@ export default function RegisterPage() {
                             )}
 
                             <Button
+                                data-testid="register-button"
                                 type="submit"
                                 className="w-full"
-                                disabled={registerMutation.isPending}
+                                disabled={isLoading}
                             >
-                                {registerMutation.isPending ? (
+                                {isLoading ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                         Criando conta...

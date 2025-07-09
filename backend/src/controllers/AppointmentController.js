@@ -158,15 +158,9 @@ class AppointmentController {
     }
   }
 
-  // Get doctor's appointments for today
+  // Get today's appointments for both doctors and patients
   async getTodayAppointments(req, res) {
     try {
-      if (req.user.role !== 'DOCTOR') {
-        return res.status(403).json({
-          error: 'Only doctors can access today\'s appointments'
-        });
-      }
-
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 

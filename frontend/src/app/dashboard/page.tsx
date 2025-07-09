@@ -47,7 +47,10 @@ export default function DashboardPage() {
             <div className="space-y-6">
                 {/* Welcome Section */}
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">
+                    <h1
+                        className="text-2xl font-bold text-gray-900"
+                        data-testid="dashboard-title"
+                    >
                         {getGreeting()}, {user?.role === 'DOCTOR' ? 'Dr. ' : ''}
                         {user?.name}!
                     </h1>

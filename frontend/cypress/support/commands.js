@@ -27,14 +27,27 @@ Cypress.Commands.add('setupApiInterceptors', () => {
   cy.intercept('GET', '**/appointments').as('getAppointments')
   cy.intercept('POST', '**/appointments').as('createAppointment')
   cy.intercept('PUT', '**/appointments/*/cancel').as('cancelAppointment')
-  cy.intercept('GET', '**/users/doctors').as('getDoctors')
+
+  // Mock doctors API with fixture data
+  cy.fixture('doctors').then((doctorsData) => {
+    cy.intercept('GET', '**/users/doctors', {
+      statusCode: 200,
+      body: doctorsData
+    }).as('getDoctors')
+  })
 })
 
 // Check toast message
-Cypress.Commands.add('checkToast', (message) => {
-  cy.get('[data-testid="toast"]', { timeout: 5000 })
+Cypress.Commands.add('checkToast', (message, type = 'success') => {
+  // Check for Sonner toast (which your app likely uses)
+  cy.get('[data-sonner-toast]', { timeout: 5000 })
     .should('be.visible')
     .and('contain', message)
+
+  // Alternative: check for generic toast
+  // cy.get('[data-testid="toast"]', { timeout: 5000 })
+  //   .should('be.visible')
+  //   .and('contain', message)
 })
 
 // Form helpers
@@ -50,7 +63,26 @@ Cypress.Commands.add('shouldBeOnDashboard', () => {
 })
 
 Cypress.Commands.add('shouldShowError', (message) => {
-  cy.get('[data-testid="error-message"]')
+  // Check for error toast or error message
+  cy.get('[data-sonner-toast]', { timeout: 5000 })
     .should('be.visible')
     .and('contain', message)
+
+  // Alternative: check for error-specific elements
+  // cy.get('[data-testid="error-message"]')
+  //   .should('be.visible')
+  //   .and('contain', message)
+})
+
+// Wait for API intercepted requests
+Cypress.Commands.add('waitForApi', (alias) => {
+  cy.wait(alias)
+})
+
+// Cleanup test data (placeholder for now)
+Cypress.Commands.add('cleanupTestData', () => {
+  // This would normally clean up any test data created
+  // For now, just clear localStorage and cookies
+  cy.clearLocalStorage()
+  cy.clearCookies()
 }) 

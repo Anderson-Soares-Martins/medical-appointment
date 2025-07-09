@@ -10,7 +10,7 @@ router.use(authenticateToken);
 router.post('/', AppointmentController.createAppointment);
 router.get('/', AppointmentController.getUserAppointments);
 router.get('/stats', AppointmentController.getAppointmentStats);
-router.get('/today', authorizeRole(['DOCTOR']), AppointmentController.getTodayAppointments);
+router.get('/today', AppointmentController.getTodayAppointments);
 router.get('/upcoming', AppointmentController.getUpcomingAppointments);
 router.get('/history', AppointmentController.getAppointmentHistory);
 router.get('/:appointmentId', AppointmentController.getAppointmentById);

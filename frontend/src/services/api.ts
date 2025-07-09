@@ -19,6 +19,25 @@ const api: AxiosInstance = axios.create({
     },
 })
 
+// Flag para evitar múltiplas tentativas de refresh simultâneas
+let isRefreshing = false
+let failedQueue: Array<{
+    resolve: (value?: unknown) => void
+    reject: (reason?: Error) => void
+}> = []
+
+const processQueue = (error: Error | null, token: string | null = null) => {
+    failedQueue.forEach(({ resolve, reject }) => {
+        if (error) {
+            reject(error)
+        } else {
+            resolve(token)
+        }
+    })
+
+    failedQueue = []
+}
+
 /** ----------------------------------------------------------------
  *  Request interceptor → insere o token de acesso (se existir)
  *  --------------------------------------------------------------*/
@@ -34,16 +53,97 @@ api.interceptors.request.use(
 )
 
 /** ----------------------------------------------------------------
- *  Response interceptor → trata erros de autenticação
+ *  Response interceptor → trata erros de autenticação e refresh automático
  *  --------------------------------------------------------------*/
 api.interceptors.response.use(
     (response: AxiosResponse): AxiosResponse => response,
-    (error: AxiosError): Promise<never> => {
-        if (error.response?.status === 401) {
-            // Token expirado ou inválido
-            clearAuthData()
-            // Redirecionamento fica a cargo de um hook (ex.: useAuth)
+    async (error: AxiosError): Promise<AxiosResponse | never> => {
+        const originalRequest = error.config as InternalAxiosRequestConfig & {
+            _retry?: boolean
         }
+
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            if (isRefreshing) {
+                // Se já está fazendo refresh, enfileira a requisição
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({ resolve, reject })
+                })
+                    .then((token) => {
+                        if (originalRequest.headers) {
+                            originalRequest.headers.Authorization = `Bearer ${token}`
+                        }
+                        return api(originalRequest)
+                    })
+                    .catch((err) => {
+                        return Promise.reject(err)
+                    })
+            }
+
+            originalRequest._retry = true
+            isRefreshing = true
+
+            const refreshToken = getRefreshToken()
+
+            if (refreshToken) {
+                try {
+                    const response = await axios.post<AuthResponse>(
+                        `${API_BASE_URL}/auth/refresh-token`,
+                        { refreshToken }
+                    )
+
+                    const {
+                        token: newToken,
+                        refreshToken: newRefreshToken,
+                        user,
+                    } = response.data
+
+                    // Atualiza os tokens
+                    setAuthToken(newToken)
+                    setRefreshToken(newRefreshToken)
+                    setCurrentUser(user)
+
+                    // Atualiza o header da requisição original
+                    if (originalRequest.headers) {
+                        originalRequest.headers.Authorization = `Bearer ${newToken}`
+                    }
+
+                    processQueue(null, newToken)
+
+                    // Reexecuta a requisição original
+                    return api(originalRequest)
+                } catch (refreshError) {
+                    processQueue(refreshError as Error, null)
+                    clearAuthData()
+
+                    // Redireciona para login apenas se não estivermos já lá
+                    if (
+                        typeof window !== 'undefined' &&
+                        !window.location.pathname.includes('/login') &&
+                        !window.location.pathname.includes('/register')
+                    ) {
+                        window.location.href = '/login'
+                    }
+
+                    return Promise.reject(refreshError)
+                } finally {
+                    isRefreshing = false
+                }
+            } else {
+                // Não há refresh token, limpa dados e redireciona
+                clearAuthData()
+
+                if (
+                    typeof window !== 'undefined' &&
+                    !window.location.pathname.includes('/login') &&
+                    !window.location.pathname.includes('/register')
+                ) {
+                    window.location.href = '/login'
+                }
+
+                return Promise.reject(error)
+            }
+        }
+
         return Promise.reject(error)
     }
 )

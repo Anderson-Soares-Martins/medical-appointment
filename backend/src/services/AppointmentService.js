@@ -393,45 +393,43 @@ class AppointmentService {
       cancelled
     };
   }
+
+  // Atualização RESTful de consulta
+  async updateAppointmentREST(appointmentId, userId, userRole, { status, notes }) {
+    const appointment = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        patient: true,
+        doctor: true
+      }
+    });
+    if (!appointment) throw new Error('Appointment not found');
+    if (userRole === 'PATIENT' && appointment.patientId !== userId) throw new Error('Access denied');
+    if (userRole === 'DOCTOR' && appointment.doctorId !== userId) throw new Error('Access denied');
+    const data = {};
+    if (status) data.status = status;
+    if (notes !== undefined) data.notes = notes;
+    const updated = await prisma.appointment.update({
+      where: { id: appointmentId },
+      data,
+      include: {
+        patient: { select: { id: true, name: true, email: true } },
+        doctor: { select: { id: true, name: true, specialty: true } }
+      }
+    });
+    return updated;
+  }
+
+  // Cancelamento RESTful de consulta
+  async deleteAppointmentREST(appointmentId, userId, userRole) {
+    const appointment = await prisma.appointment.findUnique({ where: { id: appointmentId } });
+    if (!appointment) throw new Error('Appointment not found');
+    if (userRole === 'PATIENT' && appointment.patientId !== userId) throw new Error('Access denied');
+    if (userRole === 'DOCTOR' && appointment.doctorId !== userId) throw new Error('Access denied');
+    if (appointment.status !== 'SCHEDULED') throw new Error('Only scheduled appointments can be deleted');
+    await prisma.appointment.update({ where: { id: appointmentId }, data: { status: 'CANCELLED' } });
+    return;
+  }
 }
 
-// Atualização RESTful de consulta
-async function updateAppointmentREST(appointmentId, userId, userRole, { status, notes }) {
-  const appointment = await prisma.appointment.findUnique({
-    where: { id: appointmentId },
-    include: {
-      patient: true,
-      doctor: true
-    }
-  });
-  if (!appointment) throw new Error('Appointment not found');
-  if (userRole === 'PATIENT' && appointment.patientId !== userId) throw new Error('Access denied');
-  if (userRole === 'DOCTOR' && appointment.doctorId !== userId) throw new Error('Access denied');
-  const data = {};
-  if (status) data.status = status;
-  if (notes !== undefined) data.notes = notes;
-  const updated = await prisma.appointment.update({
-    where: { id: appointmentId },
-    data,
-    include: {
-      patient: { select: { id: true, name: true, email: true } },
-      doctor: { select: { id: true, name: true, specialty: true } }
-    }
-  });
-  return updated;
-}
-
-// Cancelamento RESTful de consulta
-async function deleteAppointmentREST(appointmentId, userId, userRole) {
-  const appointment = await prisma.appointment.findUnique({ where: { id: appointmentId } });
-  if (!appointment) throw new Error('Appointment not found');
-  if (userRole === 'PATIENT' && appointment.patientId !== userId) throw new Error('Access denied');
-  if (userRole === 'DOCTOR' && appointment.doctorId !== userId) throw new Error('Access denied');
-  if (appointment.status !== 'SCHEDULED') throw new Error('Only scheduled appointments can be deleted');
-  await prisma.appointment.update({ where: { id: appointmentId }, data: { status: 'CANCELLED' } });
-  return;
-}
-
-module.exports = new AppointmentService();
-module.exports.updateAppointmentREST = updateAppointmentREST;
-module.exports.deleteAppointmentREST = deleteAppointmentREST; 
+module.exports = new AppointmentService(); 

@@ -142,7 +142,7 @@ export default function AppointmentsPage() {
 
     return (
         <DashboardLayout>
-            <div className="space-y-6">
+            <div className="space-y-6" data-testid="appointments-page">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
@@ -161,6 +161,59 @@ export default function AppointmentsPage() {
                             </Link>
                         </Button>
                     )}
+                </div>
+
+                {/* Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="text-center">
+                                <div
+                                    className="text-2xl font-bold text-blue-600"
+                                    data-testid="total-appointments"
+                                >
+                                    {filteredAppointments?.length || 0}
+                                </div>
+                                <p className="text-sm text-gray-600">
+                                    Total de Consultas
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="text-center">
+                                <div
+                                    className="text-2xl font-bold text-green-600"
+                                    data-testid="scheduled-count"
+                                >
+                                    {filteredAppointments?.filter(
+                                        (a) => a.status === 'SCHEDULED'
+                                    ).length || 0}
+                                </div>
+                                <p className="text-sm text-gray-600">
+                                    Agendadas
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="text-center">
+                                <div
+                                    className="text-2xl font-bold text-red-600"
+                                    data-testid="cancelled-count"
+                                >
+                                    {filteredAppointments?.filter(
+                                        (a) => a.status === 'CANCELLED'
+                                    ).length || 0}
+                                </div>
+                                <p className="text-sm text-gray-600">
+                                    Canceladas
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
                 {/* Filters */}
@@ -190,6 +243,28 @@ export default function AppointmentsPage() {
                                     />
                                 </div>
                             </div>
+
+                            {/* Hidden native select for Cypress testing */}
+                            <select
+                                data-testid="status-filter"
+                                value={statusFilter}
+                                onChange={(e) =>
+                                    setStatusFilter(
+                                        e.target.value as
+                                            | AppointmentStatus
+                                            | 'all'
+                                    )
+                                }
+                                className="sr-only"
+                                aria-hidden="true"
+                            >
+                                <option value="all">Todos os status</option>
+                                <option value="SCHEDULED">Agendadas</option>
+                                <option value="COMPLETED">Concluídas</option>
+                                <option value="CANCELLED">Canceladas</option>
+                                <option value="NO_SHOW">Faltou</option>
+                            </select>
+
                             <Select
                                 value={statusFilter}
                                 onValueChange={(value) =>
@@ -227,7 +302,10 @@ export default function AppointmentsPage() {
                 <div className="space-y-4">
                     {filteredAppointments?.length ? (
                         filteredAppointments.map((appointment) => (
-                            <Card key={appointment.id}>
+                            <Card
+                                key={appointment.id}
+                                data-testid="appointment-card"
+                            >
                                 <CardContent className="pt-6">
                                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                         <div className="flex-1">
@@ -236,12 +314,16 @@ export default function AppointmentsPage() {
                                                     className={getStatusColor(
                                                         appointment.status
                                                     )}
+                                                    data-testid="appointment-status"
                                                 >
                                                     {formatAppointmentStatus(
                                                         appointment.status
                                                     )}
                                                 </Badge>
-                                                <div className="flex items-center gap-1 text-sm text-gray-600">
+                                                <div
+                                                    className="flex items-center gap-1 text-sm text-gray-600"
+                                                    data-testid="appointment-date"
+                                                >
                                                     <Calendar className="h-4 w-4" />
                                                     {formatDateTime(
                                                         appointment.date
@@ -254,7 +336,10 @@ export default function AppointmentsPage() {
                                                     {user?.role === 'DOCTOR' ? (
                                                         <>
                                                             <User className="h-4 w-4 text-gray-600" />
-                                                            <span className="font-medium">
+                                                            <span
+                                                                className="font-medium"
+                                                                data-testid="patient-name"
+                                                            >
                                                                 {
                                                                     appointment
                                                                         .patient
@@ -265,7 +350,10 @@ export default function AppointmentsPage() {
                                                     ) : (
                                                         <>
                                                             <Stethoscope className="h-4 w-4 text-gray-600" />
-                                                            <span className="font-medium">
+                                                            <span
+                                                                className="font-medium"
+                                                                data-testid="doctor-name"
+                                                            >
                                                                 Dr.{' '}
                                                                 {
                                                                     appointment
@@ -273,7 +361,10 @@ export default function AppointmentsPage() {
                                                                         ?.name
                                                                 }
                                                             </span>
-                                                            <span className="text-sm text-gray-600">
+                                                            <span
+                                                                className="text-sm text-gray-600"
+                                                                data-testid="doctor-specialty"
+                                                            >
                                                                 -{' '}
                                                                 {
                                                                     appointment
@@ -286,7 +377,10 @@ export default function AppointmentsPage() {
                                                 </div>
 
                                                 {appointment.notes && (
-                                                    <div className="text-sm text-gray-600 mt-2">
+                                                    <div
+                                                        className="text-sm text-gray-600 mt-2"
+                                                        data-testid="appointment-notes"
+                                                    >
                                                         <strong>
                                                             Observações:
                                                         </strong>{' '}
@@ -297,6 +391,54 @@ export default function AppointmentsPage() {
                                         </div>
 
                                         <div className="flex items-center gap-2">
+                                            {/* View Details Button */}
+                                            <Dialog>
+                                                <DialogTrigger asChild>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        data-testid="view-details"
+                                                    >
+                                                        Ver Detalhes
+                                                    </Button>
+                                                </DialogTrigger>
+                                                <DialogContent data-testid="appointment-details-modal">
+                                                    <DialogHeader>
+                                                        <DialogTitle>
+                                                            Detalhes da Consulta
+                                                        </DialogTitle>
+                                                    </DialogHeader>
+                                                    <div className="space-y-4">
+                                                        <div>
+                                                            <strong data-testid="detail-doctor">
+                                                                Dr.{' '}
+                                                                {
+                                                                    appointment
+                                                                        .doctor
+                                                                        ?.name
+                                                                }
+                                                            </strong>
+                                                        </div>
+                                                        <div>
+                                                            <span data-testid="detail-specialty">
+                                                                {
+                                                                    appointment
+                                                                        .doctor
+                                                                        ?.specialty
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                        <div>
+                                                            <span data-testid="detail-notes">
+                                                                {
+                                                                    appointment.notes
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </DialogContent>
+                                            </Dialog>
+
                                             {canUpdateStatus(appointment) && (
                                                 <Dialog>
                                                     <DialogTrigger asChild>
@@ -414,12 +556,17 @@ export default function AppointmentsPage() {
                                                         <Button
                                                             variant="destructive"
                                                             size="sm"
+                                                            data-testid="cancel-appointment"
+                                                            disabled={
+                                                                appointment.status !==
+                                                                'SCHEDULED'
+                                                            }
                                                         >
                                                             <Trash2 className="h-4 w-4 mr-2" />
                                                             Cancelar
                                                         </Button>
                                                     </AlertDialogTrigger>
-                                                    <AlertDialogContent>
+                                                    <AlertDialogContent data-testid="cancel-modal">
                                                         <AlertDialogHeader>
                                                             <AlertDialogTitle>
                                                                 Cancelar
@@ -434,11 +581,33 @@ export default function AppointmentsPage() {
                                                                 desfeita.
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
+                                                        <div className="my-4">
+                                                            <label className="text-sm font-medium">
+                                                                Motivo do
+                                                                cancelamento
+                                                            </label>
+                                                            <select
+                                                                className="w-full mt-2 p-2 border rounded"
+                                                                data-testid="cancel-reason"
+                                                            >
+                                                                <option value="Conflito de agenda">
+                                                                    Conflito de
+                                                                    agenda
+                                                                </option>
+                                                                <option value="Emergência">
+                                                                    Emergência
+                                                                </option>
+                                                                <option value="Outros">
+                                                                    Outros
+                                                                </option>
+                                                            </select>
+                                                        </div>
                                                         <AlertDialogFooter>
                                                             <AlertDialogCancel>
                                                                 Não
                                                             </AlertDialogCancel>
                                                             <AlertDialogAction
+                                                                data-testid="confirm-cancel"
                                                                 onClick={() =>
                                                                     handleCancelAppointment(
                                                                         appointment.id
@@ -451,6 +620,30 @@ export default function AppointmentsPage() {
                                                     </AlertDialogContent>
                                                 </AlertDialog>
                                             )}
+
+                                            {appointment.status ===
+                                                'COMPLETED' && (
+                                                <div
+                                                    data-testid="non-cancellable"
+                                                    className="text-sm text-green-600"
+                                                >
+                                                    Consulta realizada
+                                                </div>
+                                            )}
+
+                                            {appointment.status ===
+                                                'COMPLETED' &&
+                                                appointment.notes && (
+                                                    <div
+                                                        data-testid="completion-date"
+                                                        className="text-sm text-gray-500"
+                                                    >
+                                                        Concluída em:{' '}
+                                                        {formatDateTime(
+                                                            appointment.date
+                                                        )}
+                                                    </div>
+                                                )}
                                         </div>
                                     </div>
                                 </CardContent>
@@ -459,7 +652,10 @@ export default function AppointmentsPage() {
                     ) : (
                         <Card>
                             <CardContent className="pt-6">
-                                <div className="text-center py-8">
+                                <div
+                                    className="text-center py-8"
+                                    data-testid="no-appointments"
+                                >
                                     <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                                     <h3 className="text-lg font-medium text-gray-900 mb-2">
                                         Nenhuma consulta encontrada
@@ -471,7 +667,10 @@ export default function AppointmentsPage() {
                                     </p>
                                     {user?.role === 'PATIENT' &&
                                         appointments?.length === 0 && (
-                                            <Button asChild>
+                                            <Button
+                                                asChild
+                                                data-testid="refresh-appointments"
+                                            >
                                                 <Link href="/appointments/new">
                                                     <Plus className="h-4 w-4 mr-2" />
                                                     Agendar Primeira Consulta
