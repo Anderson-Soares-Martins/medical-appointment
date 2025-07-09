@@ -4,7 +4,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/providers/auth-provider'
-import { useLogout } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -35,12 +34,11 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const pathname = usePathname()
-    const { user } = useAuth()
-    const logoutMutation = useLogout()
+    const { user, logout } = useAuth()
 
     const handleLogout = async () => {
         try {
-            await logoutMutation.mutateAsync()
+            await logout()
         } catch (error) {
             console.error('Logout error:', error)
         }
