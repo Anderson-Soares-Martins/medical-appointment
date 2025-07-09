@@ -18,6 +18,7 @@ import {
     Star,
     Loader2,
     type LucideProps,
+    X,
 } from 'lucide-react'
 
 // ui primitives
@@ -46,6 +47,7 @@ import { toast } from 'sonner'
 
 // layout wrapper
 import DashboardLayout from '@/components/layout/dashboard-layout'
+import Link from 'next/link'
 
 // -----------------------------------------------------------------------------
 // helpers
@@ -651,6 +653,19 @@ export default function NewAppointmentPage() {
                             </motion.div>
                         )}
                     </AnimatePresence>
+                    <div className="flex justify-center mt-8 space-x-4">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            asChild
+                            className="px-8 py-2"
+                        >
+                            <Link href="/appointments">
+                                <X className="mr-2 h-4 w-4" />
+                                Cancelar
+                            </Link>
+                        </Button>
+                    </div>
 
                     {/* Always visible schedule button for testing */}
                     <div className="flex justify-center mt-8">
