@@ -1,7 +1,6 @@
 services:
   db:
     image: postgres:15
-    restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -17,6 +16,11 @@ services:
       - "3001:3001"
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/medical
+      JWT_SECRET: your-super-secret-jwt-key-here-change-in-production
+      JWT_EXPIRES_IN: 24h
+      JWT_REFRESH_SECRET: your-super-secret-refresh-jwt-key-here-change-in-production
+      JWT_REFRESH_EXPIRES_IN: 7d
+      NODE_ENV: development
     volumes:
       - ./:/app
       - /app/node_modules
