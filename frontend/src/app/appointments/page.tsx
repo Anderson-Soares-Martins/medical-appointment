@@ -230,6 +230,7 @@ export default function AppointmentsPage() {
                                 <div className="relative">
                                     <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                                     <Input
+                                        data-testid="search-input"
                                         placeholder={`Buscar por ${
                                             user?.role === 'DOCTOR'
                                                 ? 'paciente'
@@ -445,6 +446,7 @@ export default function AppointmentsPage() {
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
+                                                            data-testid="edit-appointment"
                                                             onClick={() =>
                                                                 openEditDialog(
                                                                     appointment
@@ -528,6 +530,7 @@ export default function AppointmentsPage() {
                                                         <div className="flex justify-end gap-2">
                                                             <Button
                                                                 variant="outline"
+                                                                data-testid="cancel-edit"
                                                                 onClick={() =>
                                                                     setEditingAppointment(
                                                                         null
@@ -537,6 +540,7 @@ export default function AppointmentsPage() {
                                                                 Cancelar
                                                             </Button>
                                                             <Button
+                                                                data-testid="save-appointment"
                                                                 onClick={
                                                                     handleUpdateAppointment
                                                                 }

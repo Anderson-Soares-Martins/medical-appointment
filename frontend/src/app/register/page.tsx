@@ -203,6 +203,7 @@ export default function RegisterPage() {
                                         <Stethoscope className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                                         <Input
                                             id="specialty"
+                                            data-testid="specialty-input"
                                             type="text"
                                             placeholder="Cardiologia, Dermatologia, etc."
                                             className="pl-10"
