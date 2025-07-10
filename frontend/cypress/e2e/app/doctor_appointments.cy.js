@@ -1,8 +1,8 @@
 /// <reference types="cypress" />
 
-describe('Doctor Appointment Management Flow', () => {
+describe('Doctor Appointment Management Flow - Dr. João Santos', () => {
   beforeEach(() => {
-    // Login as doctor (Dr. João Santos)
+    // Login as Dr. João Santos
     cy.visit('/login')
     cy.get('[data-testid="email-input"]').type('dr.santos@clinic.com')
     cy.get('[data-testid="password-input"]').type('Password123')
@@ -15,58 +15,64 @@ describe('Doctor Appointment Management Flow', () => {
     cy.wait(2000) // Let page load
   })
 
-  describe('Principal Flow - Doctor Appointment Management', () => {
-    it('should display appointments page from doctor perspective', () => {
+  describe('Principal Flow - Dr. Santos Appointment Management', () => {
+    it('should display appointments page from Dr. Santos perspective', () => {
       // Check page loads
       cy.get('[data-testid="appointments-page"]').should('be.visible')
 
-      // Check doctor-specific view
+      // Check Dr. Santos specific view
       cy.get('body').then(($body) => {
         if ($body.text().includes('paciente') || $body.text().includes('Meus pacientes')) {
-          cy.log('Doctor perspective confirmed - showing patient information')
+          cy.log('Dr. Santos perspective confirmed - showing patient information')
         } else {
-          cy.log('General appointments view loaded')
+          cy.log('General appointments view loaded for Dr. Santos')
         }
+
+        // Should NOT show Dr. Santos name in appointment cards (since he's logged in)
+        cy.get('body').should('not.contain.text', 'Dr. João Santos')
       })
     })
 
-    it('should show appointment count and statistics for doctor', () => {
-      // Check total appointments counter
+    it('should show appointment count and statistics for Dr. Santos', () => {
+      // Check total appointments counter for Dr. Santos
       cy.get('body').then(($body) => {
         if ($body.find('[data-testid="total-appointments"]').length > 0) {
           cy.get('[data-testid="total-appointments"]').should('be.visible')
         } else if ($body.text().match(/\d+\s*consulta/)) {
-          cy.log('Appointment count found in text')
+          cy.log('Appointment count found in text for Dr. Santos')
         } else {
           cy.contains('Nenhuma consulta').should('be.visible')
         }
       })
     })
 
-    it('should display appointment cards with patient names', () => {
+    it('should display appointment cards with patient names for Dr. Santos', () => {
       cy.get('body').then(($body) => {
         if ($body.find('[data-testid="appointment-card"]').length > 0) {
-          // Has appointments - check for patient names
+          // Has appointments - check for patient names (Dr. Santos perspective)
           cy.get('[data-testid="appointment-card"]').first().within(() => {
             cy.get('body').then(($card) => {
-              // Should show patient name (not doctor name since doctor is logged in)
+              // Should show patient name (not Dr. Santos name since he's logged in)
               if ($card.text().includes('Maria') || $card.text().includes('João') || $card.text().match(/[A-Z][a-z]+ [A-Z][a-z]+/)) {
-                cy.log('Patient names displayed correctly for doctor')
+                cy.log('Patient names displayed correctly for Dr. Santos')
               } else {
                 cy.log('Appointment card found but patient name format may differ')
               }
+
+              // Verify it does NOT show Dr. Santos name
+              cy.get('body').should('not.contain.text', 'Dr. João Santos')
             })
           })
         } else {
-          cy.log('No appointment cards found - may be empty state')
+          cy.log('No appointment cards found for Dr. Santos - may be empty state')
         }
       })
     })
 
-    it('should show appointment management controls for doctor', () => {
+    it('should show appointment management controls for Dr. Santos', () => {
       cy.get('body').then(($body) => {
         if ($body.find('[data-testid="appointment-card"]').length > 0) {
-          // Look for management controls
+          // Look for management controls specific to Dr. Santos
           const managementActions = ['Atualizar', 'Editar', 'Status', 'Confirmar', 'Cancelar']
 
           managementActions.forEach(action => {
@@ -77,13 +83,31 @@ describe('Doctor Appointment Management Flow', () => {
         }
       })
     })
+
+    it('should verify Dr. Santos sees only his own appointments', () => {
+      // Verify appointments show only patients of Dr. Santos
+      cy.get('body').then(($body) => {
+        if ($body.find('[data-testid="appointment-card"]').length > 0) {
+          cy.get('[data-testid="appointment-card"]').each(($card) => {
+            cy.wrap($card).within(() => {
+              // Should NOT show Dr. Santos name (since he's the logged-in doctor)
+              cy.get('body').should('not.contain.text', 'Dr. João Santos')
+
+              // Should NOT show other doctors' names
+              cy.get('body').should('not.contain.text', 'Dr. Maria Silva')
+              cy.get('body').should('not.contain.text', 'Dr. Carlos Costa')
+            })
+          })
+        }
+      })
+    })
   })
 
   describe('Alternative Flow - Appointment Status Management', () => {
-    it('should allow doctor to update appointment status', () => {
+    it('should allow Dr. Santos to update appointment status', () => {
       cy.get('body').then(($body) => {
         if ($body.find('[data-testid="appointment-card"]').length > 0) {
-          // Look for status update functionality
+          // Look for status update functionality for Dr. Santos appointments
           cy.get('[data-testid="appointment-card"]').first().within(() => {
             cy.get('body').then(($card) => {
               if ($card.find('button').text().includes('Atualizar') || $card.find('select').length > 0) {
@@ -98,15 +122,15 @@ describe('Doctor Appointment Management Flow', () => {
             })
           })
         } else {
-          cy.log('No appointments available for status update')
+          cy.log('No appointments available for Dr. Santos to update status')
         }
       })
     })
 
-    it('should filter appointments by status from doctor view', () => {
+    it('should filter appointments by status from Dr. Santos view', () => {
       cy.get('body').then(($body) => {
         if ($body.find('[data-testid="status-filter"]').length > 0) {
-          // Test status filtering
+          // Test status filtering for Dr. Santos appointments
           const statuses = ['SCHEDULED', 'COMPLETED', 'CANCELLED']
 
           statuses.forEach(status => {
@@ -118,22 +142,24 @@ describe('Doctor Appointment Management Flow', () => {
           // Reset to all
           cy.get('[data-testid="status-filter"]').select('all', { force: true })
         } else {
-          cy.log('Status filter not found')
+          cy.log('Status filter not found for Dr. Santos')
         }
       })
     })
 
-    it('should search appointments by patient name', () => {
+    it('should search appointments by patient name for Dr. Santos', () => {
       cy.get('body').then(($body) => {
         if ($body.find('[data-testid="search-input"]').length > 0) {
-          // Test patient name search
+          // Test patient name search (Dr. Santos searching his patients)
           cy.get('[data-testid="search-input"]').type('Maria')
           cy.wait(1000)
 
-          // Should filter by patient name
+          // Should filter by patient name for Dr. Santos
           cy.get('body').then(($searchBody) => {
             if ($searchBody.text().includes('Maria')) {
               cy.contains('Maria').should('be.visible')
+              // Should NOT show Dr. Santos name in results
+              cy.get('body').should('not.contain.text', 'Dr. João Santos')
             } else {
               cy.contains('Nenhuma consulta').should('be.visible')
             }
@@ -142,13 +168,13 @@ describe('Doctor Appointment Management Flow', () => {
           // Clear search
           cy.get('[data-testid="search-input"]').clear()
         } else {
-          cy.log('Search input not found')
+          cy.log('Search input not found for Dr. Santos')
         }
       })
     })
 
-    it('should navigate to today appointments from main appointments', () => {
-      // Look for today appointments link
+    it('should navigate to today appointments from main appointments for Dr. Santos', () => {
+      // Look for today appointments link for Dr. Santos
       cy.get('body').then(($body) => {
         if ($body.find('a[href="/appointments/today"]').length > 0 || $body.find('button').text().includes('Hoje')) {
           // Navigate to today appointments
@@ -170,7 +196,7 @@ describe('Doctor Appointment Management Flow', () => {
   })
 
   describe('Exception Flow - Error Handling', () => {
-    it('should handle appointment API errors gracefully', () => {
+    it('should handle appointment API errors gracefully for Dr. Santos', () => {
       // Mock appointments API error
       cy.intercept('GET', '**/api/appointments*', {
         statusCode: 500,
@@ -185,8 +211,8 @@ describe('Doctor Appointment Management Flow', () => {
       cy.get('[data-testid="appointments-page"]').should('be.visible')
     })
 
-    it('should handle empty appointments list', () => {
-      // Mock empty response
+    it('should handle empty appointments list for Dr. Santos', () => {
+      // Mock empty response for Dr. Santos
       cy.intercept('GET', '**/api/appointments*', {
         statusCode: 200,
         body: []
@@ -200,7 +226,7 @@ describe('Doctor Appointment Management Flow', () => {
       cy.contains('Nenhuma consulta').should('be.visible')
     })
 
-    it('should handle appointment update errors', () => {
+    it('should handle appointment update errors for Dr. Santos', () => {
       // Mock update error
       cy.intercept('PUT', '**/api/appointments/*', {
         statusCode: 400,
@@ -209,7 +235,7 @@ describe('Doctor Appointment Management Flow', () => {
 
       cy.get('body').then(($body) => {
         if ($body.find('[data-testid="appointment-card"]').length > 0) {
-          // Try to update appointment status
+          // Try to update appointment status for Dr. Santos
           cy.get('[data-testid="appointment-card"]').first().within(() => {
             cy.get('body').then(($card) => {
               if ($card.find('button').text().includes('Confirmar')) {
@@ -218,7 +244,7 @@ describe('Doctor Appointment Management Flow', () => {
 
                 // Should handle error gracefully
                 cy.wait(1000)
-                cy.log('Update error handled')
+                cy.log('Update error handled for Dr. Santos')
               }
             })
           })
@@ -226,7 +252,7 @@ describe('Doctor Appointment Management Flow', () => {
       })
     })
 
-    it('should handle unauthorized access', () => {
+    it('should handle unauthorized access for Dr. Santos', () => {
       // Mock unauthorized response
       cy.intercept('GET', '**/api/appointments*', {
         statusCode: 403,
@@ -240,7 +266,7 @@ describe('Doctor Appointment Management Flow', () => {
       // Should handle unauthorized access
       cy.get('body').then(($body) => {
         if ($body.text().includes('Login') || $body.text().includes('Acesso negado')) {
-          cy.log('Unauthorized access handled correctly')
+          cy.log('Unauthorized access handled correctly for Dr. Santos')
         } else {
           cy.get('[data-testid="appointments-page"]').should('be.visible')
         }
@@ -248,20 +274,24 @@ describe('Doctor Appointment Management Flow', () => {
     })
   })
 
-  describe('Doctor-Specific Appointment Features', () => {
-    it('should show only appointments where doctor is assigned', () => {
+  describe('Dr. Santos Specific Appointment Features', () => {
+    it('should show only appointments where Dr. Santos is assigned', () => {
       cy.get('body').then(($body) => {
         if ($body.find('[data-testid="appointment-card"]').length > 0) {
-          // Verify appointments show patient names (not other doctors)
+          // Verify appointments show patient names (not other doctors or Dr. Santos himself)
           cy.get('[data-testid="appointment-card"]').each(($card) => {
             cy.wrap($card).within(() => {
-              // Should not show "Dr. João Santos" (the logged-in doctor)
+              // Should NOT show "Dr. João Santos" (the logged-in doctor)
               cy.get('body').should('not.contain.text', 'Dr. João Santos')
+
+              // Should NOT show other doctors
+              cy.get('body').should('not.contain.text', 'Dr. Maria Silva')
+              cy.get('body').should('not.contain.text', 'Dr. Carlos Costa')
 
               // Should show patient names instead
               cy.get('body').then(($cardBody) => {
                 if ($cardBody.text().match(/[A-Z][a-z]+ [A-Z][a-z]+/)) {
-                  cy.log('Patient name found in appointment card')
+                  cy.log('Patient name found in Dr. Santos appointment card')
                 }
               })
             })
@@ -270,7 +300,7 @@ describe('Doctor Appointment Management Flow', () => {
       })
     })
 
-    it('should allow doctor to add notes to appointments', () => {
+    it('should allow Dr. Santos to add dermatology notes to appointments', () => {
       cy.get('body').then(($body) => {
         if ($body.find('[data-testid="appointment-card"]').length > 0) {
           cy.get('[data-testid="appointment-card"]').first().within(() => {
@@ -278,7 +308,7 @@ describe('Doctor Appointment Management Flow', () => {
               if ($card.find('button').text().includes('Notas') || $card.find('textarea').length > 0) {
                 // Has notes functionality
                 if ($card.find('textarea').length > 0) {
-                  cy.get('textarea').first().type('Consulta realizada com sucesso')
+                  cy.get('textarea').first().type('Consulta dermatológica realizada com sucesso. Prescrição de medicamento tópico.')
                 } else {
                   cy.get('button').contains('Notas').click({ force: true })
                 }
@@ -289,7 +319,7 @@ describe('Doctor Appointment Management Flow', () => {
       })
     })
 
-    it('should display appointment time and date clearly', () => {
+    it('should display appointment time and date clearly for Dr. Santos', () => {
       cy.get('body').then(($body) => {
         if ($body.find('[data-testid="appointment-card"]').length > 0) {
           cy.get('[data-testid="appointment-card"]').first().within(() => {
@@ -299,7 +329,7 @@ describe('Doctor Appointment Management Flow', () => {
             // Should show date information
             cy.get('body').then(($card) => {
               if ($card.text().match(/\d{1,2}\/\d{1,2}/) || $card.text().match(/\d{4}-\d{2}-\d{2}/)) {
-                cy.log('Date information found')
+                cy.log('Date information found in Dr. Santos appointment')
               }
             })
           })
@@ -307,10 +337,10 @@ describe('Doctor Appointment Management Flow', () => {
       })
     })
 
-    it('should show appointment status with appropriate styling', () => {
+    it('should show appointment status with appropriate styling for Dr. Santos', () => {
       cy.get('body').then(($body) => {
         if ($body.find('[data-testid="appointment-card"]').length > 0) {
-          // Check for status badges
+          // Check for status badges in Dr. Santos appointments
           const statusTypes = ['Agendada', 'Concluída', 'Cancelada', 'SCHEDULED', 'COMPLETED', 'CANCELLED']
 
           statusTypes.forEach(status => {
@@ -322,16 +352,16 @@ describe('Doctor Appointment Management Flow', () => {
       })
     })
 
-    it('should provide quick access to patient contact information', () => {
+    it('should provide quick access to patient contact information for Dr. Santos', () => {
       cy.get('body').then(($body) => {
         if ($body.find('[data-testid="appointment-card"]').length > 0) {
           cy.get('[data-testid="appointment-card"]').first().within(() => {
             cy.get('body').then(($card) => {
-              // Look for contact information or buttons
+              // Look for contact information or buttons in Dr. Santos appointments
               if ($card.find('a[href^="tel:"], a[href^="mailto:"]').length > 0) {
                 cy.get('a[href^="tel:"], a[href^="mailto:"]').should('be.visible')
               } else if ($card.text().includes('@') || $card.text().match(/\(\d{2}\)/)) {
-                cy.log('Contact information displayed in appointment card')
+                cy.log('Contact information displayed in Dr. Santos appointment card')
               }
             })
           })

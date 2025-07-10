@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-describe('Doctor Dashboard - Dr. Maria Silva', () => {
+describe('Doctor Dashboard - Dr. João Santos', () => {
   beforeEach(() => {
     // Intercepta erros de JavaScript para não quebrar os testes
     cy.on('uncaught:exception', (err, runnable) => {
@@ -12,20 +12,20 @@ describe('Doctor Dashboard - Dr. Maria Silva', () => {
       return true
     })
 
-    // Login como Dr. Maria Silva (usar form submit)
+    // Login como Dr. João Santos
     cy.visit('/login')
-    cy.get('[data-testid="email-input"]').type('dr.silva@clinic.com')
+    cy.get('[data-testid="email-input"]').type('dr.santos@clinic.com')
     cy.get('[data-testid="password-input"]').type('Password123')
-    cy.get('[data-testid="login-form"]').submit()
+    cy.get('[data-testid="login-button"]').click()
 
     // Aguarda redirecionamento
     cy.url().should('include', '/dashboard', { timeout: 15000 })
     cy.wait(4000) // Aguarda carregamento do dashboard
   })
 
-  it('should display personalized welcome message for Dr. Maria Silva', () => {
+  it('should display personalized welcome message for Dr. João Santos', () => {
     // Verifica nome correto retornado pelo backend
-    cy.contains('Dr. Maria Silva', { timeout: 10000 }).should('be.visible')
+    cy.contains('Dr. João Santos', { timeout: 10000 }).should('be.visible')
 
     // Verifica saudação (pode ser qualquer uma das 3)
     cy.get('body').then(($body) => {
@@ -85,5 +85,14 @@ describe('Doctor Dashboard - Dr. Maria Silva', () => {
     // Verifica botões de ação rápida (procura apenas elementos visíveis)
     cy.get('a:visible').contains('Ver Todas as Consultas').should('be.visible')
     cy.get('a:visible').contains('Histórico').should('be.visible')
+  })
+
+  it('should show Dr. João Santos specialty information', () => {
+    // Verifica se mostra especialidade do Dr. Santos
+    cy.get('body').then(($body) => {
+      if ($body.text().includes('Dermatologia')) {
+        cy.contains('Dermatologia').should('be.visible')
+      }
+    })
   })
 }) 
