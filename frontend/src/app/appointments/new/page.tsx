@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion, AnimatePresence } from 'framer-motion'
+import * as Sentry from '@sentry/nextjs'
 
 import {
     CalendarPlus,
@@ -19,6 +20,8 @@ import {
     Loader2,
     type LucideProps,
     X,
+    Bug,
+    AlertTriangle,
 } from 'lucide-react'
 
 // ui primitives
@@ -184,6 +187,7 @@ export default function NewAppointmentPage() {
     const createAppointment = useCreateAppointment()
 
     const [step, setStep] = useState(1)
+    const [forceSentryError, setForceSentryError] = useState(false)
 
     const {
         register,
@@ -207,6 +211,43 @@ export default function NewAppointmentPage() {
     const dates = useAvailableDates()
     const timeSlots = useTimeSlots()
 
+    // 🚨 DEMO SENTRY: Funções para demonstrar diferentes tipos de erros
+    const demonstrateSentryErrors = {
+        networkError: () => {
+            Sentry.captureException(new Error('Falha de conexão com a API'), {
+                tags: { error_type: 'network', demo: true },
+                level: 'error',
+            })
+            toast.error('Erro de rede capturado pelo Sentry!')
+        },
+        validationError: () => {
+            Sentry.captureException(
+                new Error('Dados de formulário inválidos'),
+                {
+                    tags: { error_type: 'validation', demo: true },
+                    level: 'warning',
+                }
+            )
+            toast.error('Erro de validação capturado pelo Sentry!')
+        },
+        customError: () => {
+            try {
+                // Força um erro de referência
+                const obj: any = null
+                obj.property.nested.value
+            } catch (error) {
+                Sentry.captureException(error, {
+                    tags: { error_type: 'reference', demo: true },
+                    extra: {
+                        demonstration: 'Error capturado durante apresentação',
+                        timestamp: new Date().toISOString(),
+                    },
+                })
+                toast.error('Erro de referência capturado pelo Sentry!')
+            }
+        },
+    }
+
     // redirect doctors away
     useEffect(() => {
         if (user?.role === 'DOCTOR') router.push('/appointments')
@@ -223,13 +264,70 @@ export default function NewAppointmentPage() {
     // handle submit
     const onSubmit = async (data: AppointmentFormData) => {
         try {
+            // 🚨 DEMO SENTRY: Erro proposital para apresentação
+            if (forceSentryError) {
+                // Definir contexto adicional para o Sentry
+                Sentry.setContext('appointment_data', {
+                    doctorId: data.doctorId,
+                    date: data.date,
+                    time: data.time,
+                    user_role: user?.role,
+                    user_id: user?.id,
+                })
+
+                // Simular diferentes tipos de erros
+                const errorTypes = [
+                    () => {
+                        // Erro de referência
+                        const invalidObject: any = null
+                        return invalidObject.someProperty.deepProperty
+                    },
+                    () => {
+                        // Erro customizado
+                        throw new Error(
+                            'Sistema de agendamento temporariamente indisponível'
+                        )
+                    },
+                    () => {
+                        // Erro de rede simulado
+                        throw new Error(
+                            'Falha na comunicação com o servidor - Código: NET_001'
+                        )
+                    },
+                    () => {
+                        // Erro de validação
+                        throw new Error(
+                            'Horário não disponível para o médico selecionado'
+                        )
+                    },
+                ]
+
+                const randomError =
+                    errorTypes[Math.floor(Math.random() * errorTypes.length)]
+                randomError()
+            }
+
             await createAppointment.mutateAsync({
                 ...data,
                 date: `${data.date}T${data.time}:00.000Z`,
             })
             toast.success('Consulta agendada com sucesso!')
             router.push('/appointments')
-        } catch {
+        } catch (error) {
+            // Capturar o erro no Sentry com contexto adicional
+            Sentry.captureException(error, {
+                tags: {
+                    section: 'appointment_creation',
+                    user_role: user?.role,
+                },
+                extra: {
+                    form_data: data,
+                    current_step: step,
+                    force_error: forceSentryError,
+                },
+            })
+
+            console.error('Erro ao agendar consulta:', error)
             toast.error('Erro ao agendar consulta')
         }
     }
@@ -595,6 +693,84 @@ export default function NewAppointmentPage() {
                         Siga os passos abaixo para concluir o agendamento
                     </p>
                 </header>
+
+                {/* 🚨 DEMO SENTRY: Painel de demonstração */}
+                <Card className="border-2 border-dashed border-orange-300 bg-orange-50">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-orange-800">
+                            <Bug className="h-5 w-5" />
+                            Demonstração Sentry
+                        </CardTitle>
+                        <CardDescription className="text-orange-700">
+                            Painel para demonstrar as funcionalidades do Sentry
+                            durante a apresentação
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={demonstrateSentryErrors.networkError}
+                                className="border-red-300 text-red-700 hover:bg-red-50"
+                            >
+                                <AlertTriangle className="h-4 w-4 mr-2" />
+                                Erro de Rede
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={
+                                    demonstrateSentryErrors.validationError
+                                }
+                                className="border-yellow-300 text-yellow-700 hover:bg-yellow-50"
+                            >
+                                <AlertTriangle className="h-4 w-4 mr-2" />
+                                Erro Validação
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={demonstrateSentryErrors.customError}
+                                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                            >
+                                <Bug className="h-4 w-4 mr-2" />
+                                Erro Referência
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={
+                                    forceSentryError ? 'default' : 'outline'
+                                }
+                                size="sm"
+                                onClick={() =>
+                                    setForceSentryError(!forceSentryError)
+                                }
+                                className={
+                                    forceSentryError
+                                        ? 'bg-red-600 hover:bg-red-700 text-white'
+                                        : 'border-red-300 text-red-700 hover:bg-red-50'
+                                }
+                            >
+                                <Bug className="h-4 w-4 mr-2" />
+                                {forceSentryError ? 'Erro ON' : 'Erro OFF'}
+                            </Button>
+                        </div>
+                        {forceSentryError && (
+                            <div className="mt-4 p-3 bg-red-100 border border-red-300 rounded-lg">
+                                <p className="text-sm text-red-800 flex items-center gap-2">
+                                    <AlertTriangle className="h-4 w-4" />
+                                    <strong>Modo Demo Ativo:</strong> O próximo
+                                    agendamento irá gerar um erro para
+                                    demonstração!
+                                </p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
 
                 <StepIndicator steps={steps} current={step} />
 
